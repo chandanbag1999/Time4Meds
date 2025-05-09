@@ -1,0 +1,30 @@
+# Dependency directories
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build output
+dist/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDE files
+.vscode/
+.idea/
+*.sublime-*
+
+# Logs
+logs
+*.log
+
+# Testing
+coverage/
+
+# Misc
+.DS_Store
+.npm
+.yarn-integrity 
