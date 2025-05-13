@@ -1,20 +1,27 @@
-const express = require('express');
+import express from 'express';
+import { 
+  getAllMedicines, 
+  getMedicine, 
+  createMedicine, 
+  updateMedicine, 
+  deleteMedicine 
+} from '../controllers/medicine.controller.js';
+
 const router = express.Router();
-const medicineController = require('../controllers/medicine.controller');
 
 // Get all medicines
-router.get('/', medicineController.getAllMedicines);
+router.get('/', getAllMedicines);
 
 // Get a single medicine
-router.get('/:id', medicineController.getMedicine);
+router.get('/:id', getMedicine);
 
 // Create a new medicine
-router.post('/', medicineController.createMedicine);
+router.post('/', createMedicine);
 
 // Update a medicine
-router.put('/:id', medicineController.updateMedicine);
+router.put('/:id', updateMedicine);
 
 // Delete a medicine
-router.delete('/:id', medicineController.deleteMedicine);
+router.delete('/:id', deleteMedicine);
 
-module.exports = router; 
+export default router; 

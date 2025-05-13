@@ -1,6 +1,11 @@
-const express = require('express');
-require('dotenv').config();
-const connectDB = require('./db/dbConfig');
+import express from 'express';
+import dotenv from 'dotenv';
+import connectDB from './db/dbConfig.js';
+import medicineRoutes from './routes/medicine.routes.js';
+import authRoutes from './routes/auth.routes.js';
+
+// Load environment variables
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -15,8 +20,8 @@ app.get('/', (req, res) => {
 });
 
 // Load route files
-const medicineRoutes = require('./routes/medicine.routes');
 app.use('/api/medicines', medicineRoutes);
+app.use('/api/auth', authRoutes);
 
 // Connect to MongoDB and start server
 connectDB()

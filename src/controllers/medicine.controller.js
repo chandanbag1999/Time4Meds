@@ -1,7 +1,7 @@
-const Medicine = require('../models/medicine.model');
+import Medicine from '../models/medicine.model.js';
 
 // Get all medicines
-exports.getAllMedicines = async (req, res) => {
+export const getAllMedicines = async (req, res) => {
   try {
     const medicines = await Medicine.find();
     res.status(200).json(medicines);
@@ -11,7 +11,7 @@ exports.getAllMedicines = async (req, res) => {
 };
 
 // Get a single medicine
-exports.getMedicine = async (req, res) => {
+export const getMedicine = async (req, res) => {
   try {
     const medicine = await Medicine.findById(req.params.id);
     if (!medicine) {
@@ -24,7 +24,7 @@ exports.getMedicine = async (req, res) => {
 };
 
 // Create a new medicine
-exports.createMedicine = async (req, res) => {
+export const createMedicine = async (req, res) => {
   try {
     const medicine = new Medicine(req.body);
     const newMedicine = await medicine.save();
@@ -35,7 +35,7 @@ exports.createMedicine = async (req, res) => {
 };
 
 // Update a medicine
-exports.updateMedicine = async (req, res) => {
+export const updateMedicine = async (req, res) => {
   try {
     const medicine = await Medicine.findByIdAndUpdate(
       req.params.id,
@@ -52,7 +52,7 @@ exports.updateMedicine = async (req, res) => {
 };
 
 // Delete a medicine
-exports.deleteMedicine = async (req, res) => {
+export const deleteMedicine = async (req, res) => {
   try {
     const medicine = await Medicine.findByIdAndDelete(req.params.id);
     if (!medicine) {
