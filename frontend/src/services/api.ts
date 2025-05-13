@@ -1,0 +1,112 @@
+import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
+
+// Get the API URL from environment variables or use default
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+// Create axios instance with default config
+const api = axios.create({
+  baseURL: API_URL,
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+  },
+  timeout: 10000, // 10 second timeout
+});
+
+// Request interceptor for adding auth token and handling request config
+api.interceptors.request.use(
+  (config: AxiosRequestConfig): AxiosRequestConfig => {
+    // Get JWT token from localStorage
+    const token = localStorage.getItem('token');
+    
+    // If token exists, add it to the Authorization header
+    if (token && config.headers) {
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    return config;
+  },
+  (error: AxiosError): Promise<AxiosError> => {
+    console.error('Request error:', error);
+    return Promise.reject(error);
+  }
+);
+
+// Response interceptor for handling common response scenarios and errors
+api.interceptors.response.use(
+  (response: AxiosResponse): AxiosResponse => {
+    // You can transform successful responses here if needed
+    return response;
+  },
+  (error: AxiosError): Promise<AxiosError> => {
+    const { response } = error;
+    
+    // Handle specific status codes
+    if (response) {
+      const status = response.status;
+      
+      switch (status) {
+        case 401: // Unauthorized
+          // Clear auth data and redirect to login
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          window.location.href = '/login';
+          break;
+          
+        case 403: // Forbidden
+          console.error('Access forbidden');
+          break;
+          
+        case 404: // Not found
+          console.error('Resource not found');
+          break;
+          
+        case 500: // Server error
+          console.error('Server error:', response.data);
+          break;
+          
+        default:
+          // Handle other status codes
+          console.error(`Error with status code ${status}:`, response.data);
+      }
+    } else if (error.request) {
+      // The request was made but no response was received
+      console.error('No response received:', error.request);
+    } else {
+      // Something happened in setting up the request
+      console.error('Error setting up request:', error.message);
+    }
+    
+    // Always reject the promise to let the calling code handle the error
+    return Promise.reject(error);
+  }
+);
+
+// Helper methods for common HTTP methods
+const apiService = {
+  // Get request
+  get: <T>(url: string, config?: AxiosRequestConfig): Promise<T> => 
+    api.get<T>(url, config).then(response => response.data),
+  
+  // Post request
+  post: <T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> => 
+    api.post<T>(url, data, config).then(response => response.data),
+  
+  // Put request
+  put: <T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> => 
+    api.put<T>(url, data, config).then(response => response.data),
+  
+  // Patch request
+  patch: <T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> => 
+    api.patch<T>(url, data, config).then(response => response.data),
+  
+  // Delete request
+  delete: <T>(url: string, config?: AxiosRequestConfig): Promise<T> => 
+    api.delete<T>(url, config).then(response => response.data),
+};
+
+// Export the raw axios instance
+export { api };
+
+// Export the enhanced api service as default
+export default apiService; 
