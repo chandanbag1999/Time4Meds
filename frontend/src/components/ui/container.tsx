@@ -21,16 +21,16 @@ export function Container({
     lg: 'max-w-screen-lg',
     xl: 'max-w-screen-xl',
     '2xl': 'max-w-screen-2xl',
-    full: 'max-w-full',
+    full: 'w-full max-w-none',
   }
 
   return (
     <div
       className={cn(
-        sizeClasses[size],
+        'w-full',
+        size !== 'full' && sizeClasses[size],
         centered && 'mx-auto',
         withPadding && 'px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12',
-        'w-full',
         className
       )}
       {...props}

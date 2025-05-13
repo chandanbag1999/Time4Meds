@@ -1,11 +1,11 @@
-# Medicine Reminder Application
+# Time4Meds
 
 A full-stack application for managing medicine reminders, with features to track medicine intake and provide timely notifications.
 
 ## Project Structure
 
 ```
-medicine-reminder/
+Time4Meds/
 ├── backend/           # Node.js Express API
 │   ├── src/           # Source code
 │   ├── package.json   # Backend dependencies
@@ -35,7 +35,7 @@ medicine-reminder/
 1. Clone the repository:
 ```bash
 git clone <repository-url>
-cd medicine-reminder
+cd Time4Meds
 ```
 
 2. Install dependencies:
@@ -47,7 +47,7 @@ npm run install-all
 Create a `.env` file in the backend directory with:
 ```
 PORT=3000
-MONGO_URI=mongodb://localhost:27017/medicine_reminder
+MONGO_URI=mongodb://localhost:27017/time4meds
 JWT_SECRET=your_jwt_secret
 NODE_ENV=development
 ```

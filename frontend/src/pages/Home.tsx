@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button-modern'
 import { Container } from '@/components/ui/container'
@@ -6,31 +6,89 @@ import { Card } from '@/components/ui/card'
 
 export default function Home() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  
+  // Refs for sections
+  const featuresRef = useRef<HTMLElement>(null)
+  const howItWorksRef = useRef<HTMLElement>(null)
+  const pricingRef = useRef<HTMLElement>(null)
+  const aboutRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768)
+      if (window.innerWidth >= 768) {
+        setIsMenuOpen(false)
+      }
     }
 
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
+  // Scroll to section function
+  const scrollToSection = (ref: React.RefObject<HTMLElement>) => {
+    if (ref.current) {
+      ref.current.scrollIntoView({ behavior: 'smooth' })
+      // Close mobile menu if open
+      if (isMenuOpen) {
+        setIsMenuOpen(false)
+      }
+    }
+  }
+
   return (
     <div className="min-h-screen flex flex-col w-full">
       {/* Header/Navbar */}
-      <header className="bg-white border-b border-gray-100 sticky top-0 z-10 w-full">
-        <Container className="py-3 flex justify-between items-center" size={isMobile ? "lg" : "2xl"}>
+      <header className="bg-white border-b border-gray-100 sticky top-0 z-10 w-screen">
+        <Container className="py-3 flex justify-between items-center" size="full">
           <Link to="/" className="font-bold text-xl text-primary-600">
-            MediRemind
+            Time4Meds
           </Link>
+          {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-6">
-            <Link to="/" className="text-sm font-medium text-gray-700 hover:text-primary-600">Features</Link>
-            <Link to="/" className="text-sm font-medium text-gray-700 hover:text-primary-600">How it Works</Link>
-            <Link to="/" className="text-sm font-medium text-gray-700 hover:text-primary-600">Pricing</Link>
-            <Link to="/" className="text-sm font-medium text-gray-700 hover:text-primary-600">About</Link>
+            <button 
+              onClick={() => scrollToSection(featuresRef)} 
+              className="text-sm font-medium text-gray-700 hover:text-primary-600 cursor-pointer"
+            >
+              Features
+            </button>
+            <button 
+              onClick={() => scrollToSection(howItWorksRef)} 
+              className="text-sm font-medium text-gray-700 hover:text-primary-600 cursor-pointer"
+            >
+              How it Works
+            </button>
+            <button 
+              onClick={() => scrollToSection(pricingRef)} 
+              className="text-sm font-medium text-gray-700 hover:text-primary-600 cursor-pointer"
+            >
+              Pricing
+            </button>
+            <button 
+              onClick={() => scrollToSection(aboutRef)} 
+              className="text-sm font-medium text-gray-700 hover:text-primary-600 cursor-pointer"
+            >
+              About
+            </button>
           </nav>
           <div className="flex items-center space-x-3">
+            {/* Mobile menu toggle */}
+            <button 
+              className="md:hidden p-2 text-gray-500"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              aria-label="Toggle menu"
+            >
+              {isMenuOpen ? (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              )}
+            </button>
             <Link to="/login" className="text-sm font-medium text-gray-700 hover:text-primary-600">Log In</Link>
             <Button 
               variant="primary" 
@@ -42,6 +100,38 @@ export default function Home() {
             </Button>
           </div>
         </Container>
+        
+        {/* Mobile menu */}
+        {isMenuOpen && (
+          <div className="md:hidden bg-white border-b border-gray-200 shadow-lg">
+            <div className="py-3 px-4 space-y-3">
+              <button 
+                onClick={() => scrollToSection(featuresRef)}
+                className="block w-full text-left py-2 text-sm font-medium text-gray-700 hover:text-primary-600"
+              >
+                Features
+              </button>
+              <button 
+                onClick={() => scrollToSection(howItWorksRef)}
+                className="block w-full text-left py-2 text-sm font-medium text-gray-700 hover:text-primary-600"
+              >
+                How it Works
+              </button>
+              <button 
+                onClick={() => scrollToSection(pricingRef)}
+                className="block w-full text-left py-2 text-sm font-medium text-gray-700 hover:text-primary-600"
+              >
+                Pricing
+              </button>
+              <button 
+                onClick={() => scrollToSection(aboutRef)}
+                className="block w-full text-left py-2 text-sm font-medium text-gray-700 hover:text-primary-600"
+              >
+                About
+              </button>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* Hero Section */}
@@ -52,7 +142,7 @@ export default function Home() {
               Never Miss Your <span className="text-primary-600">Medication</span> Again
             </h1>
             <p className="text-gray-600 mb-6">
-              MediRemind is an advanced medication reminder and tracking app to help you stay on top of your health. Simple, reliable medication management for you and your loved ones.
+              Time4Meds is an advanced medication reminder and tracking app to help you stay on top of your health. Simple, reliable medication management for you and your loved ones.
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
               <Button 
@@ -86,15 +176,38 @@ export default function Home() {
             <div className="relative w-64 md:w-72 h-auto">
               <div className="absolute inset-0 bg-primary-100 rounded-3xl transform rotate-6 scale-95 opacity-20"></div>
               <div className="relative border-8 border-gray-800 rounded-3xl overflow-hidden bg-white shadow-xl">
-                <img 
-                  src="/images/app-screenshot.png" 
-                  alt="MediRemind App Screenshot" 
-                  className="w-full h-auto"
-                  onError={(e) => {
-                    // Fallback if image doesn't exist
-                    e.currentTarget.src = 'https://placehold.co/320x640/6366f1/ffffff?text=MediRemind+App';
-                  }}
-                />
+                <div className="w-full h-[450px] bg-gradient-to-b from-primary-100 to-primary-200 flex flex-col items-center justify-center p-6 text-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-primary-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  <h3 className="text-xl font-bold text-gray-800 mb-2">Time4Meds</h3>
+                  <p className="text-sm text-gray-600">Never miss your medication again with smart reminders</p>
+                  
+                  <div className="mt-8 w-full bg-white rounded-lg shadow-sm p-4">
+                    <div className="flex items-center mb-4">
+                      <div className="w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center text-white text-xs font-bold">
+                        T4M
+                      </div>
+                      <div className="ml-3">
+                        <div className="h-2 w-24 bg-gray-200 rounded"></div>
+                        <div className="h-2 w-16 bg-gray-200 rounded mt-1"></div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      {[1, 2, 3].map((item) => (
+                        <div key={item} className="flex items-center p-2 border border-gray-100 rounded-md">
+                          <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                          <div className="ml-3 flex-grow">
+                            <div className="h-2 w-20 bg-gray-200 rounded"></div>
+                            <div className="h-2 w-12 bg-gray-200 rounded mt-1"></div>
+                          </div>
+                          <div className="text-xs text-primary-600 font-medium">8:00 AM</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -102,12 +215,12 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section className="py-16 bg-gray-50 w-full">
+      <section ref={featuresRef} className="py-16 bg-gray-50 w-full">
         <Container size={isMobile ? "lg" : "2xl"}>
           <div className="text-center mb-12">
             <h2 className="text-2xl md:text-3xl font-bold mb-3">Smart Features for Better Health</h2>
             <p className="text-gray-600 max-w-2xl mx-auto">
-              MediRemind offers intelligent tools to simplify medication management and improve adherence.
+              Time4Meds offers intelligent tools to simplify medication management and improve adherence.
             </p>
           </div>
 
@@ -170,10 +283,10 @@ export default function Home() {
       </section>
 
       {/* How It Works Section */}
-      <section className="py-16 bg-white w-full">
+      <section ref={howItWorksRef} className="py-16 bg-white w-full">
         <Container size={isMobile ? "lg" : "2xl"}>
           <div className="text-center mb-12">
-            <h2 className="text-2xl md:text-3xl font-bold mb-2">How MediRemind Works</h2>
+            <h2 className="text-2xl md:text-3xl font-bold mb-2">How Time4Meds Works</h2>
             <p className="text-gray-600">A simple 3-step process to help you stay on top of your medication</p>
           </div>
 
@@ -227,7 +340,7 @@ export default function Home() {
           <div className="text-center mb-12">
             <h2 className="text-2xl md:text-3xl font-bold mb-2">A Seamless Experience Across All Devices</h2>
             <p className="text-gray-600">
-              Whether on desktop, tablet, or mobile, MediRemind provides a beautiful and intuitive interface.
+              Whether on desktop, tablet, or mobile, Time4Meds provides a beautiful and intuitive interface.
             </p>
           </div>
 
@@ -260,7 +373,7 @@ export default function Home() {
       </section>
 
       {/* Pricing Section */}
-      <section className="py-16 bg-white w-full">
+      <section ref={pricingRef} className="py-16 bg-white w-full">
         <Container size={isMobile ? "lg" : "2xl"}>
           <div className="text-center mb-12">
             <h2 className="text-2xl md:text-3xl font-bold mb-2">Simple, Transparent Pricing</h2>
@@ -369,7 +482,7 @@ export default function Home() {
           <div className="grid md:grid-cols-3 gap-8 w-full">
             <Card className="p-6 border border-gray-200">
               <p className="text-gray-600 mb-4 text-sm italic">
-                "MediRemind has been a game-changer for me. I used to forget my blood pressure medication at least once a week, but now I'm much more consistent."
+                "Time4Meds has been a game-changer for me. I used to forget my blood pressure medication at least once a week, but now I'm much more consistent."
               </p>
               <div className="flex items-center">
                 <div className="w-10 h-10 bg-gray-200 rounded-full mr-3"></div>
@@ -409,12 +522,12 @@ export default function Home() {
         </Container>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-gray-300 py-12 w-full">
-        <Container size={isMobile ? "lg" : "2xl"}>
+      {/* About/Footer Section */}
+      <footer ref={aboutRef} className="bg-gray-900 text-gray-300 py-12 w-screen">
+        <Container size="full">
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div>
-              <h3 className="font-bold text-white text-lg mb-4">MediRemind</h3>
+              <h3 className="font-bold text-white text-lg mb-4">Time4Meds</h3>
               <p className="text-sm text-gray-400 mb-4">
                 Smart medication reminders for a healthier life
               </p>
@@ -458,7 +571,7 @@ export default function Home() {
           
           <div className="border-t border-gray-800 pt-8 text-sm text-center text-gray-500">
             <div className="flex justify-between items-center flex-col md:flex-row gap-4">
-              <p>&copy; {new Date().getFullYear()} MediRemind. All rights reserved.</p>
+              <p>&copy; {new Date().getFullYear()} Time4Meds. All rights reserved.</p>
               <div className="flex space-x-4">
                 <Link to="/" className="hover:text-white">Privacy Policy</Link>
                 <Link to="/" className="hover:text-white">Terms of Service</Link>

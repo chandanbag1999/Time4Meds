@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import Navbar from './Navbar';
 import { cn } from '@/lib/utils';
+import { Container } from './ui/container';
 
 interface ResponsiveLayoutProps {
   className?: string;
@@ -29,7 +30,7 @@ export default function ResponsiveLayout({ className }: ResponsiveLayoutProps) {
 
   return (
     <div className={cn(
-      'min-h-screen w-full flex flex-col transition-all duration-300',
+      'min-h-screen w-full flex flex-col transition-all duration-300 overflow-x-hidden',
       isMobile ? 'bg-gray-50' : 'bg-gradient-to-br from-gray-50 to-gray-100',
       className
     )}>
@@ -41,31 +42,22 @@ export default function ResponsiveLayout({ className }: ResponsiveLayoutProps) {
       />
       
       {/* Main content with different styling for mobile and desktop */}
-      <main className={cn(
-        'flex-grow w-full py-4 md:py-6 transition-all duration-300',
-        isMobile ? 'px-4' : 'px-6 md:px-8 lg:px-12'
-      )}>
-        <div className={cn(
-          'mx-auto w-full transition-all duration-300',
-          isMobile ? 'max-w-full' : 'max-w-full xl:max-w-[1400px] 2xl:max-w-[1600px]'
-        )}>
+      <main className="flex-grow w-full py-4 md:py-6 transition-all duration-300">
+        <Container size="full">
           <Outlet />
-        </div>
+        </Container>
       </main>
       
       {/* Footer with adaptive styling */}
       <footer className={cn(
-        'w-full py-4 transition-all duration-300',
+        'w-screen py-4 transition-all duration-300',
         isMobile 
-          ? 'bg-white border-t border-gray-200 px-4' 
-          : 'bg-white/80 backdrop-blur-sm border-t border-gray-200/60 px-6 md:px-8 lg:px-12'
+          ? 'bg-white border-t border-gray-200' 
+          : 'bg-white/80 backdrop-blur-sm border-t border-gray-200/60'
       )}>
-        <div className={cn(
-          'mx-auto text-center text-gray-500 text-sm',
-          isMobile ? 'max-w-full' : 'max-w-full xl:max-w-[1400px] 2xl:max-w-[1600px]'
-        )}>
-          &copy; {new Date().getFullYear()} MediRemind App. All rights reserved.
-        </div>
+        <Container size="full" className="text-center text-gray-500 text-sm">
+          &copy; {new Date().getFullYear()} Time4Meds. All rights reserved.
+        </Container>
       </footer>
       
       {/* Mobile menu overlay */}

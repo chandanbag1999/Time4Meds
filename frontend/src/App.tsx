@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { ToastProvider } from './contexts/ToastContext'
+import { ThemeProvider } from './contexts/ThemeContext'
 
 // Layout and Components
 import ResponsiveLayout from './components/ResponsiveLayout'
@@ -19,32 +20,34 @@ import NotFound from './pages/NotFound'
 
 function App() {
   return (
-    <AuthProvider>
-      <ToastProvider>
-        <BrowserRouter>
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            
-            {/* Protected Routes */}
-            <Route element={<PrivateRoute />}>
-              <Route element={<ResponsiveLayout />}>
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/add-medicine" element={<AddMedicine />} />
-                <Route path="/edit-medicine/:id" element={<EditMedicine />} />
-                <Route path="/logs" element={<Logs />} />
-                <Route path="/reminder-logs" element={<ReminderLogs />} />
+    <ThemeProvider>
+      <AuthProvider>
+        <ToastProvider>
+          <BrowserRouter>
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<Home />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              
+              {/* Protected Routes */}
+              <Route element={<PrivateRoute />}>
+                <Route element={<ResponsiveLayout />}>
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/add-medicine" element={<AddMedicine />} />
+                  <Route path="/edit-medicine/:id" element={<EditMedicine />} />
+                  <Route path="/logs" element={<Logs />} />
+                  <Route path="/reminder-logs" element={<ReminderLogs />} />
+                </Route>
               </Route>
-            </Route>
-            
-            {/* 404 Route */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </ToastProvider>
-    </AuthProvider>
+              
+              {/* 404 Route */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </ToastProvider>
+      </AuthProvider>
+    </ThemeProvider>
   )
 }
 

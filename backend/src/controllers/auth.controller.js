@@ -14,6 +14,43 @@ export const register = async (req, res) => {
       });
     }
 
+    // For mock DB testing
+    if (global.mockDB) {
+      // Check if user already exists in our mock DB
+      const existingUser = global.mockDB.users.find(u => u.email === email);
+      if (existingUser) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'User with this email already exists' 
+        });
+      }
+
+      // Create a mock user
+      const mockUser = {
+        _id: Date.now().toString(),
+        name,
+        email,
+        password,
+        role: 'user',
+        createdAt: new Date()
+      };
+      
+      global.mockDB.users.push(mockUser);
+      
+      // Return success
+      return res.status(201).json({
+        success: true,
+        message: 'User registered successfully',
+        data: {
+          id: mockUser._id,
+          name: mockUser.name,
+          email: mockUser.email,
+          role: mockUser.role
+        }
+      });
+    }
+
+    // Regular MongoDB flow
     // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -66,6 +103,47 @@ export const login = async (req, res) => {
       });
     }
 
+    // For mock DB testing
+    if (global.mockDB) {
+      // Find user in our mock DB
+      const mockUser = global.mockDB.users.find(u => u.email === email);
+      if (!mockUser) {
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid credentials'
+        });
+      }
+
+      // Simple password check for mock DB
+      if (mockUser.password !== password) {
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid credentials'
+        });
+      }
+
+      // Create JWT token
+      const token = jwt.sign(
+        { id: mockUser._id, email: mockUser.email, role: mockUser.role },
+        process.env.JWT_SECRET || 'testsecret',
+        { expiresIn: '1d' }
+      );
+
+      // Return token and user data
+      return res.status(200).json({
+        success: true,
+        message: 'Login successful',
+        token,
+        data: {
+          id: mockUser._id,
+          name: mockUser.name,
+          email: mockUser.email,
+          role: mockUser.role
+        }
+      });
+    }
+
+    // Regular MongoDB flow
     // Find user by email
     const user = await User.findOne({ email });
     if (!user) {

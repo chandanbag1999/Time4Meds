@@ -55,7 +55,28 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       className
     )
 
+    // Check if children is a React element that's a Link component
+    const childIsLink = React.isValidElement(children) && 
+                        children.type === Link;
+
     if (asChild && href) {
+      // If the child is already a Link component, don't wrap it in another Link
+      if (childIsLink) {
+        // Pass the baseStyles to the child Link component
+        return React.cloneElement(
+          children as React.ReactElement<any>,
+          {
+            className: cn(baseStyles, (children as React.ReactElement<any>).props.className)
+          },
+          <>
+            {leftIcon && <span className="mr-2">{leftIcon}</span>}
+            {(children as React.ReactElement<any>).props.children}
+            {rightIcon && <span className="ml-2">{rightIcon}</span>}
+          </>
+        );
+      }
+      
+      // Otherwise, create a new Link
       return (
         <Link
           to={href}

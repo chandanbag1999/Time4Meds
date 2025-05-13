@@ -82,27 +82,53 @@ api.interceptors.response.use(
   }
 );
 
+// Helper function to validate response data
+const validateResponseData = <T>(data: any): T => {
+  if (data === undefined || data === null) {
+    // Return empty array for collection endpoints
+    if (Array.isArray(data)) {
+      return [] as unknown as T;
+    }
+    // Return empty object for single item endpoints
+    return {} as T;
+  }
+  return data as T;
+};
+
 // Helper methods for common HTTP methods
 const apiService = {
   // Get request
   get: <T>(url: string, config?: AxiosRequestConfig): Promise<T> => 
-    api.get<T>(url, config).then(response => response.data),
+    api.get<T>(url, config)
+      .then(response => validateResponseData<T>(response.data))
+      .catch(error => {
+        console.error(`GET request failed for ${url}:`, error);
+        // For endpoints that typically return arrays, return empty array
+        if (url.includes('/medicines') || url.includes('/reminders')) {
+          return [] as unknown as T;
+        }
+        throw error;
+      }),
   
   // Post request
   post: <T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> => 
-    api.post<T>(url, data, config).then(response => response.data),
+    api.post<T>(url, data, config)
+      .then(response => validateResponseData<T>(response.data)),
   
   // Put request
   put: <T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> => 
-    api.put<T>(url, data, config).then(response => response.data),
+    api.put<T>(url, data, config)
+      .then(response => validateResponseData<T>(response.data)),
   
   // Patch request
   patch: <T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> => 
-    api.patch<T>(url, data, config).then(response => response.data),
+    api.patch<T>(url, data, config)
+      .then(response => validateResponseData<T>(response.data)),
   
   // Delete request
   delete: <T>(url: string, config?: AxiosRequestConfig): Promise<T> => 
-    api.delete<T>(url, config).then(response => response.data),
+    api.delete<T>(url, config)
+      .then(response => validateResponseData<T>(response.data)),
 };
 
 // Export the raw axios instance

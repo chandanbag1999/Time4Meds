@@ -116,13 +116,24 @@ export default function Dashboard() {
         setLoading(true)
         // Get medicines from API
         const data = await apiService.get<Medicine[]>("/api/medicines")
-        setMedicines(data)
+        // Ensure data is an array
+        setMedicines(Array.isArray(data) ? data : [])
         
         // Get user info from localStorage
         const userString = localStorage.getItem("user")
-        if (userString) {
-          const user = JSON.parse(userString)
-          setUserName(user.name || "")
+        // Only try to parse if userString is not null or undefined
+        if (userString && userString !== "undefined" && userString !== "null") {
+          try {
+            const user = JSON.parse(userString)
+            setUserName(user?.name || "")
+          } catch (parseError) {
+            console.error("Error parsing user data:", parseError)
+            // Clear invalid data
+            localStorage.removeItem("user")
+          }
+        } else if (userString) {
+          // Clear invalid values
+          localStorage.removeItem("user")
         }
       } catch (err) {
         console.error("Error fetching medicines:", err)
@@ -149,12 +160,16 @@ export default function Dashboard() {
         
         // Get reminders for today only
         const data = await apiService.get<ReminderLog[]>(`/api/reminders/log?date=${formattedDate}`)
-        setTodayReminders(data)
+        // Ensure data is an array
+        setTodayReminders(Array.isArray(data) ? data : [])
       } catch (err) {
         console.error("Error fetching today's reminders:", err)
         // Use sample data if API fails
         if (usingSampleData) {
           setTodayReminders(generateSampleReminders())
+        } else {
+          // Ensure todayReminders is always an array
+          setTodayReminders([])
         }
       } finally {
         setRemindersLoading(false)

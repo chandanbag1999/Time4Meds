@@ -293,22 +293,16 @@ export default function AddMedicine() {
               type="button"
               variant="outline"
               onClick={() => navigate("/dashboard")}
-          <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            >
+              Cancel
+            </Button>
+            
             <Button 
               type="submit" 
               className="w-full sm:w-auto flex-grow"
               disabled={isSubmitting}
             >
               {isSubmitting ? "Adding..." : "Add Medicine"}
-            </Button>
-            
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full sm:w-auto"
-              onClick={() => navigate('/dashboard')}
-            >
-              Cancel
             </Button>
           </div>
         </form>
