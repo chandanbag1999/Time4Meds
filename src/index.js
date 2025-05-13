@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import connectDB from './db/dbConfig.js';
 import medicineRoutes from './routes/medicine.routes.js';
 import authRoutes from './routes/auth.routes.js';
+import userRoutes from './routes/user.routes.js';
 
 // Load environment variables
 dotenv.config();
@@ -22,6 +23,7 @@ app.get('/', (req, res) => {
 // Load route files
 app.use('/api/medicines', medicineRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
 
 // Connect to MongoDB and start server
 connectDB()
