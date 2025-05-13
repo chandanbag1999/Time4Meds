@@ -317,4 +317,90 @@ export const getReminderStats = async (req, res) => {
       error: error.message
     });
   }
+};
+
+// Get reminder logs for the user (reminders endpoint)
+export const getUserReminderLogs = async (req, res) => {
+  try {
+    const { medicineId, startDate, endDate, date, status, limit: limitStr, page: pageStr } = req.query;
+    
+    // Build query object
+    const query = { userId: req.user._id };
+    
+    // Handle date filtering
+    if (date) {
+      // Single date filtering (e.g., ?date=2023-09-15)
+      const startOfDay = new Date(date);
+      const endOfDay = new Date(date);
+      endOfDay.setHours(23, 59, 59, 999);
+      
+      query.timestamp = {
+        $gte: startOfDay,
+        $lte: endOfDay
+      };
+    } else if (startDate && endDate) {
+      // Date range filtering (e.g., ?startDate=2023-09-01&endDate=2023-09-15)
+      query.timestamp = {
+        $gte: new Date(startDate),
+        $lte: new Date(`${endDate}T23:59:59.999Z`)
+      };
+    }
+    
+    // Add medicine filter if provided
+    if (medicineId) {
+      query.medicineId = medicineId;
+    }
+    
+    // Add status filter if provided
+    if (status && ['pending', 'taken', 'skipped', 'missed'].includes(status)) {
+      query.status = status;
+    }
+    
+    // Pagination
+    const page = parseInt(pageStr) || 1;
+    const limit = parseInt(limitStr) || 20; // Higher default limit for this endpoint
+    const skip = (page - 1) * limit;
+    
+    // Get total count for pagination
+    const total = await ReminderLog.countDocuments(query);
+    
+    // Find reminder logs with filters, pagination and sorting
+    const logs = await ReminderLog.find(query)
+      .sort({ timestamp: -1 }) // Newest first
+      .skip(skip)
+      .limit(limit)
+      .populate('medicineId', 'name dosage frequency');
+    
+    // Group logs by date
+    const groupedLogs = logs.reduce((acc, log) => {
+      const date = log.timestamp.toISOString().split('T')[0];
+      if (!acc[date]) {
+        acc[date] = [];
+      }
+      acc[date].push(log);
+      return acc;
+    }, {});
+    
+    res.status(200).json({
+      success: true,
+      count: logs.length,
+      total,
+      pagination: {
+        page,
+        pages: Math.ceil(total / limit),
+        limit
+      },
+      data: {
+        logs,
+        groupedByDate: groupedLogs
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching reminder logs:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching reminder logs',
+      error: error.message
+    });
+  }
 }; 

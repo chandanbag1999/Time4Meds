@@ -274,4 +274,58 @@ export const validateQuickLog = (req, res, next) => {
   
   // If no errors, proceed
   next();
+};
+
+// Middleware to validate date parameters in query
+export const validateDateParams = (req, res, next) => {
+  const { date, startDate, endDate } = req.query;
+  
+  // Regular expression for YYYY-MM-DD format
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+  
+  if (date && !dateRegex.test(date)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Date must be in YYYY-MM-DD format'
+    });
+  }
+  
+  if ((startDate && !dateRegex.test(startDate)) || (endDate && !dateRegex.test(endDate))) {
+    return res.status(400).json({
+      success: false,
+      message: 'Start date and end date must be in YYYY-MM-DD format'
+    });
+  }
+  
+  if (startDate && endDate) {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid date values'
+      });
+    }
+    
+    if (start > end) {
+      return res.status(400).json({
+        success: false,
+        message: 'Start date cannot be after end date'
+      });
+    }
+    
+    // Limit range to 90 days to prevent performance issues
+    const diffTime = Math.abs(end - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays > 90) {
+      return res.status(400).json({
+        success: false,
+        message: 'Date range cannot exceed 90 days'
+      });
+    }
+  }
+  
+  next();
 }; 
