@@ -4,6 +4,8 @@ import connectDB from './db/dbConfig.js';
 import medicineRoutes from './routes/medicine.routes.js';
 import authRoutes from './routes/auth.routes.js';
 import userRoutes from './routes/user.routes.js';
+import reminderLogRoutes from './routes/reminderLog.routes.js';
+import remindersRoutes from './routes/reminders.routes.js';
 
 // Load environment variables
 dotenv.config();
@@ -24,6 +26,8 @@ app.get('/', (req, res) => {
 app.use('/api/medicines', medicineRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/reminder-logs', reminderLogRoutes);
+app.use('/api/reminders', remindersRoutes);
 
 // Connect to MongoDB and start server
 connectDB()
