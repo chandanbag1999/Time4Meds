@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LoginCredentials } from "@/services/authService";
+import type { LoginCredentials } from "@/services/authService";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { LoadingButton } from "@/components/ui/loading-button";
+import { Eye, EyeOff } from "lucide-react";
 
 type FormErrors = {
   email?: string;
@@ -30,6 +30,7 @@ export default function Login() {
   
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -45,6 +46,10 @@ export default function Login() {
         [name]: undefined
       }));
     }
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
   };
 
   const validateForm = (): boolean => {
@@ -190,13 +195,25 @@ export default function Login() {
                   <Input
                     id="password"
                     name="password"
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
                     value={formData.password}
                     onChange={handleChange}
-                    className={`pl-10 py-3 bg-gray-50 border ${errors.password ? "border-red-300 focus:border-red-500 focus:ring-red-500" : "border-gray-200 focus:border-indigo-500 focus:ring-indigo-500"} rounded-lg shadow-sm focus:ring-2 w-full transition-colors`}
+                    className={`pl-10 py-3 pr-10 bg-gray-50 border ${errors.password ? "border-red-300 focus:border-red-500 focus:ring-red-500" : "border-gray-200 focus:border-indigo-500 focus:ring-indigo-500"} rounded-lg shadow-sm focus:ring-2 w-full transition-colors`}
                     disabled={isSubmitting}
                   />
+                  <button
+                    type="button"
+                    onClick={togglePasswordVisibility}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+                    tabIndex={-1}
+                  >
+                    {showPassword ? (
+                      <EyeOff size={20} />
+                    ) : (
+                      <Eye size={20} />
+                    )}
+                  </button>
                 </div>
                 {errors.password && (
                   <p className="text-red-500 text-xs mt-1 flex items-center">

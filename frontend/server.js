@@ -19,8 +19,9 @@ async function createServer() {
     res.sendFile(join(__dirname, 'index.html'));
   });
   
-  app.listen(5173, () => {
-    console.log('Server is running at http://localhost:5173');
+  const PORT = process.env.PORT || 5173;
+  app.listen(PORT, () => {
+    console.log(`Server is running at http://localhost:${PORT}`);
   });
 }
 

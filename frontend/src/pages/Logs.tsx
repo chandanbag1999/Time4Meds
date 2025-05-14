@@ -29,6 +29,18 @@ interface LogResponse {
   currentPage: number
 }
 
+// Helper type for response handling
+type ApiResponse = {
+  [key: string]: any;
+  logs?: LogEntry[];
+  data?: any;
+  results?: any;
+  totalPages?: number;
+  currentPage?: number;
+  pages?: number;
+  page?: number;
+}
+
 export default function Logs() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
   const [logs, setLogs] = useState<LogEntry[]>([])
@@ -118,34 +130,126 @@ export default function Logs() {
       
       const filtersToUse = newFilters || filters
       const url = buildApiUrl(page, filtersToUse)
-      const response = await apiService.get<LogResponse>(url)
+      console.log('Fetching logs from URL:', url)
       
-      if (page === 1 || !append) {
-        setLogs(response.logs || [])
-      } else {
-        setLogs(prevLogs => [...prevLogs, ...(response.logs || [])])
+      const response = await apiService.get(url) as ApiResponse
+      console.log('API Response:', response)
+      
+      // Process response data
+      let logsData: LogEntry[] = []
+      let totalPagesData = 1
+      let currentPageData = page
+      
+      // Handle different response formats
+      if (response) {
+        if (typeof response === 'object' && response !== null) {
+          // Case 1: Response is { logs: [...], totalPages: X, currentPage: Y }
+          if ('logs' in response && Array.isArray(response.logs)) {
+            logsData = response.logs as LogEntry[]
+            totalPagesData = response.totalPages || 1
+            currentPageData = response.currentPage || page
+          }
+          // Case 2: Response is an array of logs directly
+          else if (Array.isArray(response)) {
+            logsData = response as LogEntry[]
+          }
+          // Case 3: Response has a data property containing the logs structure
+          else if ('data' in response) {
+            const responseData = response.data as ApiResponse
+            if (Array.isArray(responseData)) {
+              logsData = responseData as LogEntry[]
+            } else if (responseData && typeof responseData === 'object') {
+              if ('logs' in responseData && Array.isArray(responseData.logs)) {
+                logsData = responseData.logs as LogEntry[]
+                totalPagesData = responseData.totalPages || 1
+                currentPageData = responseData.currentPage || page
+              }
+            }
+          }
+          // Case 4: Response has a results property (common in some APIs)
+          else if ('results' in response && Array.isArray(response.results)) {
+            logsData = response.results as LogEntry[]
+            totalPagesData = response.totalPages || response.pages || 1
+            currentPageData = response.currentPage || response.page || page
+          }
+        }
       }
       
-      setCurrentPage(response.currentPage || page)
-      setTotalPages(response.totalPages || 1)
+      console.log('Processed logs data:', logsData)
+      
+      if (logsData.length === 0 && page === 1 && !append) {
+        // Check if we need to fetch from a different endpoint
+        try {
+          console.log('Trying alternative endpoint /api/logs')
+          const altResponse = await apiService.get('/api/logs') as ApiResponse
+          console.log('Alternative API Response:', altResponse)
+          
+          if (Array.isArray(altResponse)) {
+            logsData = altResponse as LogEntry[]
+          } else if (altResponse && typeof altResponse === 'object') {
+            if (Array.isArray(altResponse.logs)) {
+              logsData = altResponse.logs as LogEntry[]
+            } else if (Array.isArray(altResponse.data)) {
+              logsData = altResponse.data as LogEntry[]
+            } else if (Array.isArray(altResponse.results)) {
+              logsData = altResponse.results as LogEntry[]
+            }
+          }
+        } catch (altError) {
+          console.error('Alternative endpoint failed:', altError)
+        }
+      }
+      
+      if (page === 1 || !append) {
+        setLogs(logsData)
+      } else {
+        setLogs(prevLogs => [...prevLogs, ...logsData])
+      }
+      
+      setTotalPages(totalPagesData)
+      setCurrentPage(currentPageData)
     } catch (error) {
-      toast("Failed to load logs", "error")
       console.error("Error fetching logs:", error)
       
       // If API fails, provide fallback data
       if (page === 1 || !append) {
-        const fallbackLogs: LogEntry[] = [
-          { id: 1, medicineName: "Aspirin", medicineId: "1", status: "taken", time: "2023-07-01 08:30 AM", notes: "Taken with breakfast" },
-          { id: 2, medicineName: "Vitamin D", medicineId: "2", status: "missed", time: "2023-07-01 09:00 AM", notes: "Forgot" },
-          { id: 3, medicineName: "Amoxicillin", medicineId: "3", status: "skipped", time: "2023-06-30 08:00 PM", notes: "Felt nauseous" }
-        ]
+        // Check if we have medicine names to create more realistic fallback data
+        const fallbackLogs: LogEntry[] = []
+        
+        if (Object.keys(medicineNames).length > 0) {
+          // Create fallback logs based on the available medicines
+          Object.entries(medicineNames).forEach(([id, name], index) => {
+            const statuses: ("taken" | "missed" | "skipped")[] = ["taken", "missed", "skipped"]
+            const status = statuses[index % statuses.length]
+            
+            fallbackLogs.push({
+              id: index + 1,
+              medicineName: name,
+              medicineId: id,
+              status,
+              time: `${new Date().toLocaleDateString()} ${index % 12 + 1}:00 ${index % 12 >= 6 ? 'PM' : 'AM'}`,
+              notes: `Sample ${status} log for ${name}`
+            })
+          })
+        }
+        
+        // If no medicines were found, use generic fallback data
+        if (fallbackLogs.length === 0) {
+          fallbackLogs.push(
+            { id: 1, medicineName: "Aspirin", medicineId: "1", status: "taken", time: "2023-07-01 08:30 AM", notes: "Taken with breakfast" },
+            { id: 2, medicineName: "Vitamin D", medicineId: "2", status: "missed", time: "2023-07-01 09:00 AM", notes: "Forgot" },
+            { id: 3, medicineName: "Amoxicillin", medicineId: "3", status: "skipped", time: "2023-06-30 08:00 PM", notes: "Felt nauseous" }
+          )
+        }
+        
         setLogs(fallbackLogs)
+        toast("Using sample data - couldn't connect to the server", "info")
       }
     } finally {
       setLoading(false)
       setLoadingMore(false)
     }
-  }, [buildApiUrl, filters, toast])
+  }, [buildApiUrl, filters, toast, medicineNames])
 
   useEffect(() => {
     fetchLogs(1)
@@ -326,6 +430,15 @@ export default function Logs() {
                   Try adjusting your filters to see more results.
                 </p>
               )}
+              <p className="text-gray-500 dark:text-gray-400 mt-4">
+                You can add medication logs by taking or skipping medications from your dashboard.
+              </p>
+              <Button
+                className="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-600 dark:hover:bg-indigo-700"
+                onClick={() => navigate('/dashboard')}
+              >
+                Go to Dashboard
+              </Button>
             </div>
           ) : isMobile ? (
             // Mobile view using cards
@@ -397,19 +510,21 @@ export default function Logs() {
             </Table>
           )}
           
-          <div className="bg-gray-50 dark:bg-gray-800/50 px-4 py-3 border-t dark:border-gray-700 flex justify-center rounded-b-xl">
-            <LoadingButton 
-              variant="outline" 
-              size="sm" 
-              isLoading={loadingMore}
-              loadingText="Loading..."
-              onClick={loadMore}
-              className="rounded-full dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-              disabled={currentPage >= totalPages}
-            >
-              {currentPage >= totalPages ? "No More Logs" : "Load More"}
-            </LoadingButton>
-          </div>
+          {logs.length > 0 && (
+            <div className="bg-gray-50 dark:bg-gray-800/50 px-4 py-3 border-t dark:border-gray-700 flex justify-center rounded-b-xl">
+              <LoadingButton 
+                variant="outline" 
+                size="sm" 
+                isLoading={loadingMore}
+                loadingText="Loading..."
+                onClick={loadMore}
+                className="rounded-full dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                disabled={currentPage >= totalPages}
+              >
+                {currentPage >= totalPages ? "No More Logs" : "Load More"}
+              </LoadingButton>
+            </div>
+          )}
         </div>
       </div>
       

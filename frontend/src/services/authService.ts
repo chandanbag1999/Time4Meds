@@ -52,6 +52,34 @@ const authService = {
     }
   },
 
+  async forgotPassword(email: string): Promise<any> {
+    try {
+      return await apiService.post('/api/auth/forgot-password', { email });
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      throw error;
+    }
+  },
+
+  async verifyResetToken(token: string): Promise<boolean> {
+    try {
+      await apiService.post('/api/auth/verify-reset-token', { token });
+      return true;
+    } catch (error) {
+      console.error('Token verification error:', error);
+      return false;
+    }
+  },
+
+  async resetPassword(token: string, password: string): Promise<any> {
+    try {
+      return await apiService.post('/api/auth/reset-password', { token, password });
+    } catch (error) {
+      console.error('Reset password error:', error);
+      throw error;
+    }
+  },
+
   logout(): void {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
