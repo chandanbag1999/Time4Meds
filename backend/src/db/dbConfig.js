@@ -4,12 +4,18 @@ import mongoose from 'mongoose';
 const connectDB = async () => {
   try {
     // Use environment variable for MongoDB connection or fallback to localhost for development
-    const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/time4meds';
+    // Check for both MONGODB_URI and MONGO_URI
+    const mongoURI = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/time4meds';
+    
+    console.log('Attempting to connect to MongoDB with URI:', 
+      mongoURI.startsWith('mongodb+srv://') ? 
+      `mongodb+srv://****:****@${mongoURI.split('@')[1]}` : 
+      mongoURI);
     
     // Set mongoose options
     const options = {
       autoIndex: true,
-      serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
+      serverSelectionTimeoutMS: 10000, // Timeout after 10s
       socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
       family: 4 // Use IPv4, skip trying IPv6
     };
