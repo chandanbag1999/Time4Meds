@@ -1,4 +1,5 @@
-import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios from 'axios';
+import type { AxiosError, AxiosResponse, InternalAxiosRequestConfig, AxiosRequestConfig } from 'axios';
 
 // Get the API URL from environment variables or use a default
 // In production, this should be the full URL to your backend
@@ -12,12 +13,12 @@ const api = axios.create({
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   },
-  timeout: 10000, // 10 second timeout
+  timeout: 30000, // Increase from 10 seconds to 30 seconds
 });
 
 // Request interceptor for adding auth token and handling request config
 api.interceptors.request.use(
-  (config: AxiosRequestConfig): AxiosRequestConfig => {
+  (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
     // Get JWT token from localStorage
     const token = localStorage.getItem('token');
     

@@ -1,4 +1,4 @@
-import apiService from './api';
+import apiService, { api } from './api';
 
 export interface LoginCredentials {
   email: string;
@@ -26,7 +26,9 @@ const USER_KEY = 'user';
 const authService = {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     try {
-      const data = await apiService.post<AuthResponse>('/auth/login', credentials);
+      const data = await apiService.post<AuthResponse>('/auth/login', credentials, {
+        timeout: 30000 // 30 seconds
+      });
       if (data.token) {
         localStorage.setItem(TOKEN_KEY, data.token);
         localStorage.setItem(USER_KEY, JSON.stringify(data.user));

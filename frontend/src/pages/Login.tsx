@@ -106,6 +106,9 @@ export default function Login() {
         } else if (data && data.message) {
           errorMessage = data.message;
         }
+      } else if (error.code === 'ECONNABORTED') {
+        // Request timeout
+        errorMessage = "Connection timed out. The server is taking too long to respond. Please try again later or contact support.";
       } else if (error.request) {
         // Request made but no response received
         if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
