@@ -1,7 +1,9 @@
 import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 
-// Get the API URL from environment variables or use default
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// Get the API URL from environment variables or use a default
+// In production, this should be the full URL to your backend
+// In development, this can be relative as it will be handled by the Vite proxy
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 // Create axios instance with default config
 const api = axios.create({

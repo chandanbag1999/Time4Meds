@@ -142,7 +142,7 @@ export default function EditMedicine() {
     const fetchMedicine = async () => {
       try {
         setIsLoading(true)
-        const response = await apiService.get<any>(`/api/medicines/${id}`)
+        const response = await apiService.get<any>(`/medicines/${id}`)
         
         // Handle different API response structures
         let medicineData;
@@ -417,7 +417,7 @@ export default function EditMedicine() {
       };
       
       // Submit update to API
-      await apiService.put(`/api/medicines/${id}`, medicineData);
+      await apiService.put(`/medicines/${id}`, medicineData);
       
       // Show success toast notification
       success(`${formData.name} has been updated`, {
@@ -446,7 +446,7 @@ export default function EditMedicine() {
   const handleDelete = async () => {
     try {
       setIsDeleting(true)
-      await apiService.delete(`/api/medicines/${id}`)
+      await apiService.delete(`/medicines/${id}`)
       
       // Close the modal
       setIsDeleteModalOpen(false)

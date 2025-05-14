@@ -12,6 +12,7 @@ import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@
 import { TableSkeleton } from "@/components/ui/table-skeleton"
 import { CardSkeleton } from "@/components/ui/card-skeleton"
 import MedicineDetailSheet from "@/components/MedicineDetailSheet"
+import { format } from "date-fns"
 
 interface Medicine {
   _id: string
@@ -160,9 +161,7 @@ export default function Dashboard() {
   const refreshMedicines = async () => {
     try {
       setLoading(true)
-      // Get medicines from API
-      const data = await apiService.get<Medicine[]>("/api/medicines")
-      // Ensure data is an array
+      const data = await apiService.get<Medicine[]>("/medicines")
       setMedicines(Array.isArray(data) ? data : [])
       
       // Get user info from localStorage
@@ -199,10 +198,10 @@ export default function Dashboard() {
         
         // Format today's date in YYYY-MM-DD format for the API
         const today = new Date()
-        const formattedDate = today.toISOString().split('T')[0]
+        const formattedDate = format(today, 'yyyy-MM-dd')
         
         // Get reminders for today only
-        const data = await apiService.get<ReminderLog[]>(`/api/reminders/log?date=${formattedDate}`)
+        const data = await apiService.get<ReminderLog[]>(`/reminders/log?date=${formattedDate}`)
         // Ensure data is an array
         setTodayReminders(Array.isArray(data) ? data : [])
       } catch (err) {
@@ -233,7 +232,7 @@ export default function Dashboard() {
     if (window.confirm("Are you sure you want to delete this medicine?")) {
       try {
         if (!usingSampleData) {
-          await apiService.delete(`/api/medicines/${id}`)
+          await apiService.delete(`/medicines/${id}`)
         }
         setMedicines(medicines.filter(med => med._id !== id))
         toast("Medicine deleted successfully", "success")
@@ -259,7 +258,7 @@ export default function Dashboard() {
       }
       
       if (!usingSampleData) {
-        await apiService.post('/api/reminders/log', logData)
+        await apiService.post('/reminders/log', logData)
       }
       
       // Update local state to show the change immediately

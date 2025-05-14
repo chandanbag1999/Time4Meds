@@ -11,6 +11,7 @@ import remindersRoutes from './routes/reminders.routes.js';
 import testRoutes from './routes/test.routes.js';
 import { errorHandler, notFound } from './middleware/errorHandler.js';
 import { startReminderCronJob, stopReminderCronJob } from './jobs/reminderCron.js';
+import { protect } from './middleware/auth.js';
 
 // Load environment variables
 dotenv.config();
@@ -61,6 +62,14 @@ apiRouter.use('/users', userRoutes);
 apiRouter.use('/reminder-logs', reminderLogRoutes);
 apiRouter.use('/reminders', remindersRoutes);
 apiRouter.use('/test', testRoutes);
+
+// Add a direct fallback route for /logs that redirects to /reminders/log
+apiRouter.get('/logs', protect, (req, res) => {
+  // Forward the request to the reminders/log endpoint
+  req.url = '/reminders/log';
+  apiRouter.handle(req, res);
+});
+
 app.use('/api', apiRouter);
 
 // Keep-alive route to prevent Render free tier from sleeping

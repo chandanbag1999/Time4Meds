@@ -60,7 +60,7 @@ const ReminderLogs = () => {
   useEffect(() => {
     const fetchMedicines = async () => {
       try {
-        const data = await apiService.get<Medicine[]>("/api/medicines")
+        const data = await apiService.get<Medicine[]>("/medicines")
         setMedicines(data)
       } catch (err) {
         console.error("Error fetching medicines:", err)
@@ -88,7 +88,7 @@ const ReminderLogs = () => {
       }
       
       // Build the API endpoint with query parameters
-      let endpoint = `/api/reminders/log?limit=10&page=${page}`
+      let endpoint = `/reminders/log?limit=10&page=${page}`
       if (medicineId && medicineId !== "all") {
         endpoint += `&medicineId=${medicineId}`
       }

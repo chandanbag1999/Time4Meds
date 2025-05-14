@@ -34,11 +34,13 @@ const LogFilterModal: React.FC<LogFilterModalProps> = ({
   const [filters, setFilters] = useState<LogFilters>(currentFilters);
   const [medicines, setMedicines] = useState<Medicine[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingMedicines, setLoadingMedicines] = useState(false);
 
   useEffect(() => {
     const fetchMedicines = async () => {
       try {
-        const data = await apiService.get<Medicine[]>('/api/medicines');
+        setLoadingMedicines(true)
+        const data = await apiService.get<Medicine[]>('/medicines');
         setMedicines(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error('Error fetching medicines:', error);
@@ -48,6 +50,8 @@ const LogFilterModal: React.FC<LogFilterModalProps> = ({
           { _id: '2', name: 'Vitamin D' },
           { _id: '3', name: 'Amoxicillin' }
         ]);
+      } finally {
+        setLoadingMedicines(false)
       }
     };
 

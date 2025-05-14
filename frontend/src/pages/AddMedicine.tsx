@@ -223,7 +223,7 @@ export default function AddMedicine() {
       }
       
       // Submit to API
-      await apiService.post("/api/medicines", medicineData)
+      await apiService.post("/medicines", medicineData)
       
       // Show success toast notification with enhanced features
       success(`${formData.name} added to your medications`, {

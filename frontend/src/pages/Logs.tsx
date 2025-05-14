@@ -74,7 +74,7 @@ export default function Logs() {
   useEffect(() => {
     const fetchMedicines = async () => {
       try {
-        const medicines = await apiService.get<Array<{ _id: string, name: string }>>('/api/medicines')
+        const medicines = await apiService.get<Array<{ _id: string, name: string }>>('/medicines')
         if (Array.isArray(medicines)) {
           const namesMap: Record<string, string> = {}
           medicines.forEach(med => {
@@ -91,7 +91,7 @@ export default function Logs() {
   }, [])
 
   const buildApiUrl = useCallback((page = 1, currentFilters = filters) => {
-    let url = `/api/reminders/log?limit=10&page=${page}`
+    let url = `/reminders/log?limit=10&page=${page}`
     
     if (currentFilters.medicineId) {
       url += `&medicineId=${currentFilters.medicineId}`
@@ -177,29 +177,6 @@ export default function Logs() {
       
       console.log('Processed logs data:', logsData)
       
-      if (logsData.length === 0 && page === 1 && !append) {
-        // Check if we need to fetch from a different endpoint
-        try {
-          console.log('Trying alternative endpoint /api/logs')
-          const altResponse = await apiService.get('/api/logs') as ApiResponse
-          console.log('Alternative API Response:', altResponse)
-          
-          if (Array.isArray(altResponse)) {
-            logsData = altResponse as LogEntry[]
-          } else if (altResponse && typeof altResponse === 'object') {
-            if (Array.isArray(altResponse.logs)) {
-              logsData = altResponse.logs as LogEntry[]
-            } else if (Array.isArray(altResponse.data)) {
-              logsData = altResponse.data as LogEntry[]
-            } else if (Array.isArray(altResponse.results)) {
-              logsData = altResponse.results as LogEntry[]
-            }
-          }
-        } catch (altError) {
-          console.error('Alternative endpoint failed:', altError)
-        }
-      }
-      
       if (page === 1 || !append) {
         setLogs(logsData)
       } else {
@@ -272,7 +249,7 @@ export default function Logs() {
   const handleExport = async () => {
     try {
       // Build export URL with current filters
-      let exportUrl = '/api/reminders/log/export'
+      let exportUrl = '/reminders/log/export'
       const queryParams = []
       
       if (filters.medicineId) {
