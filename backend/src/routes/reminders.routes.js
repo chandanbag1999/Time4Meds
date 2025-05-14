@@ -1,7 +1,8 @@
 import express from 'express';
 import { 
   logMedicineReminder,
-  getUserReminderLogs
+  getUserReminderLogs,
+  exportReminderLogs
 } from '../controllers/reminderLog.controller.js';
 import { protect } from '../middleware/auth.js';
 import { validateQuickLog, validateDateParams } from '../middleware/validate.js';
@@ -38,5 +39,18 @@ router.post('/log', validateQuickLog, logMedicineReminder);
  * @returns {success, count, total, pagination, data}
  */
 router.get('/log', validateDateParams, getUserReminderLogs);
+
+/**
+ * @route   GET /api/reminders/log/export
+ * @desc    Export reminder logs as CSV
+ * @access  Private
+ * @query   {
+ *            medicineId (optional): Filter logs by medicine
+ *            dateFrom, dateTo (optional): Filter by date range
+ *            status (optional): Filter by status
+ *          }
+ * @returns {CSV file}
+ */
+router.get('/log/export', validateDateParams, exportReminderLogs);
 
 export default router; 

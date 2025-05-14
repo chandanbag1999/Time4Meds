@@ -3,10 +3,9 @@ import mongoose from 'mongoose';
 // Connect to MongoDB
 const connectDB = async () => {
   try {
-    // Check for both MONGODB_URI and MONGO_URI
+
     const mongoURIEnv = process.env.MONGODB_URI || process.env.MONGO_URI;
     
-    // If no URI is provided, use localhost as fallback
     const mongoURI = mongoURIEnv || 'mongodb://localhost:27017/time4meds';
     
     // Log connection attempt (with credentials masked)

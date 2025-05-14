@@ -403,4 +403,72 @@ export const getUserReminderLogs = async (req, res) => {
       error: error.message
     });
   }
+};
+
+// Export reminder logs for the user
+export const exportReminderLogs = async (req, res) => {
+  try {
+    const { medicineId, dateFrom, dateTo, status } = req.query;
+    
+    // Build query object
+    const query = { userId: req.user._id };
+    
+    // Add date range filter if provided
+    if (dateFrom && dateTo) {
+      query.timestamp = {
+        $gte: new Date(dateFrom),
+        $lte: new Date(`${dateTo}T23:59:59.999Z`)
+      };
+    }
+    
+    // Add medicine filter if provided
+    if (medicineId) {
+      query.medicineId = medicineId;
+    }
+    
+    // Add status filter if provided
+    if (status && ['pending', 'taken', 'skipped', 'missed'].includes(status)) {
+      query.status = status;
+    }
+    
+    // Get logs without pagination for export
+    const logs = await ReminderLog.find(query)
+      .sort({ timestamp: -1 })
+      .populate('medicineId', 'name dosage frequency');
+    
+    // If no logs found, return an empty CSV with headers
+    if (logs.length === 0) {
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename=medication-logs-${new Date().toISOString().split('T')[0]}.csv`);
+      return res.send('Date,Time,Medicine,Dosage,Status,Notes\r\n');
+    }
+    
+    // Convert logs to CSV format
+    const csvHeader = 'Date,Time,Medicine,Dosage,Status,Notes\r\n';
+    const csvRows = logs.map(log => {
+      const date = log.timestamp.toISOString().split('T')[0];
+      const time = log.time || log.timestamp.toTimeString().split(' ')[0].substring(0, 5);
+      const medicine = log.medicineId ? log.medicineId.name : 'Unknown';
+      const dosage = log.medicineId ? log.medicineId.dosage : '';
+      const status = log.status;
+      const notes = log.notes ? `"${log.notes.replace(/"/g, '""')}"` : '';
+      
+      return `${date},${time},${medicine},${dosage},${status},${notes}`;
+    }).join('\r\n');
+    
+    const csvContent = csvHeader + csvRows;
+    
+    // Set headers for CSV download
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename=medication-logs-${new Date().toISOString().split('T')[0]}.csv`);
+    
+    res.send(csvContent);
+  } catch (error) {
+    console.error('Error exporting reminder logs:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error exporting reminder logs',
+      error: error.message
+    });
+  }
 }; 
