@@ -99,6 +99,45 @@ const simulatePushNotification = (userId, medicineName, reminderTime) => {
 };
 
 /**
+ * Check if the application is using mock database
+ */
+const isUsingMockDatabase = () => {
+  return !!global.mockDB;
+};
+
+/**
+ * Get mock medicine data when in mock mode
+ */
+const getMockMedicineData = () => {
+  const now = new Date();
+  const currentHour = now.getHours().toString().padStart(2, '0');
+  const currentMinute = now.getMinutes().toString().padStart(2, '0');
+  
+  // Create one mock medicine for demonstration
+  return [{
+    _id: 'mock-med-id-' + Date.now(),
+    name: 'Mock Medicine',
+    dosage: '100mg',
+    isActive: true,
+    times: [`${currentHour}:${currentMinute}`],
+    userId: {
+      _id: 'mock-user-id',
+      name: 'Mock User',
+      email: 'mock@example.com'
+    }
+  }];
+};
+
+/**
+ * Mock creating a reminder log entry
+ */
+const createMockReminderLog = (userId, medicineId, time) => {
+  // Just log that we would create this
+  console.log(`[${new Date().toISOString()}] MOCK: Created reminder log for medicine ${medicineId} at ${time}`);
+  return { _id: 'mock-log-' + Date.now() };
+};
+
+/**
  * Initialize and run the medicine reminder cron job
  * Checks for medicines that should be reminded at the current time
  * Creates a ReminderLog entry with status 'pending' for each match
@@ -116,13 +155,23 @@ const reminderCronJob = cron.schedule('* * * * *', async () => {
     
     console.log(`[${now.toISOString()}] Checking for medicine reminders at ${currentTime}`);
     
+    // Check if using mock database
+    const usingMockDatabase = isUsingMockDatabase();
+    
     // Find all active medicines
-    const medicines = await Medicine.find({
-      isActive: true
-    }).populate({
-      path: 'userId',
-      select: 'name email'
-    });
+    let medicines = [];
+    
+    if (usingMockDatabase) {
+      console.log(`[${now.toISOString()}] Using mock medicine data for reminders`);
+      medicines = getMockMedicineData();
+    } else {
+      medicines = await Medicine.find({
+        isActive: true
+      }).populate({
+        path: 'userId',
+        select: 'name email'
+      });
+    }
     
     // Filter medicines that have a reminder at the current time
     const matchingMedicines = medicines.filter(medicine => {
@@ -161,14 +210,18 @@ const reminderCronJob = cron.schedule('* * * * *', async () => {
         console.log(`[${now.toISOString()}] Processing reminder for ${medicine.name} at ${matchingTime} for ${medicine.userId.email}`);
         
         // Create a new ReminderLog entry with status 'pending'
-        await ReminderLog.create({
-          userId: medicine.userId._id,
-          medicineId: medicine._id,
-          time: matchingTime,
-          status: 'pending',
-          timestamp: now,
-          notes: `Auto-generated reminder for ${medicine.name}`
-        });
+        if (usingMockDatabase) {
+          createMockReminderLog(medicine.userId._id, medicine._id, matchingTime);
+        } else {
+          await ReminderLog.create({
+            userId: medicine.userId._id,
+            medicineId: medicine._id,
+            time: matchingTime,
+            status: 'pending',
+            timestamp: now,
+            notes: `Auto-generated reminder for ${medicine.name}`
+          });
+        }
         
         // Simulate sending an email reminder
         simulateEmailReminder(medicine.userId.email, medicine.name, matchingTime);
