@@ -5,9 +5,9 @@
       "destination": "/index.html"
     }
   ],
-  "buildCommand": "npm install --legacy-peer-deps --ignore-platform && npm run build",
+  "buildCommand": "cp package.json.vercel package.json && npm install --legacy-peer-deps && npm run build",
   "devCommand": "npm run dev",
-  "installCommand": "npm install --legacy-peer-deps --ignore-platform",
+  "installCommand": "cp package.json.vercel package.json && npm install --legacy-peer-deps",
   "git": {
     "deploymentEnabled": {
       "main": true
