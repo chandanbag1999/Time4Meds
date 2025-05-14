@@ -5,6 +5,9 @@
       "destination": "/index.html"
     }
   ],
+  "routes": [
+    { "src": "/[^.]+", "dest": "/", "status": 200 }
+  ],
   "buildCommand": "cp package.json.vercel package.json && npm install --legacy-peer-deps && npm run build",
   "devCommand": "npm run dev",
   "installCommand": "cp package.json.vercel package.json && npm install --legacy-peer-deps",
