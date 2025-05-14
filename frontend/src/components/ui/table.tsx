@@ -19,7 +19,7 @@ const TableHeader = React.forwardRef<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement>
 >(({ className, ...props }, ref) => (
-  <thead ref={ref} className={cn("bg-gray-50", className)} {...props} />
+  <thead ref={ref} className={cn("bg-gray-50 dark:bg-gray-800/60", className)} {...props} />
 ))
 TableHeader.displayName = "TableHeader"
 
@@ -29,7 +29,7 @@ const TableBody = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <tbody
     ref={ref}
-    className={cn("divide-y divide-gray-200", className)}
+    className={cn("divide-y divide-gray-200 dark:divide-gray-700", className)}
     {...props}
   />
 ))
@@ -41,7 +41,7 @@ const TableFooter = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <tfoot
     ref={ref}
-    className={cn("bg-gray-50 font-medium", className)}
+    className={cn("bg-gray-50 dark:bg-gray-800 font-medium", className)}
     {...props}
   />
 ))
@@ -54,7 +54,7 @@ const TableRow = React.forwardRef<
   <tr
     ref={ref}
     className={cn(
-      "hover:bg-gray-50 data-[state=selected]:bg-gray-100 transition-colors",
+      "hover:bg-gray-50 dark:hover:bg-gray-800/70 data-[state=selected]:bg-gray-100 dark:data-[state=selected]:bg-gray-700/50 transition-colors",
       className
     )}
     {...props}
@@ -69,7 +69,7 @@ const TableHead = React.forwardRef<
   <th
     ref={ref}
     className={cn(
-      "px-4 py-3 text-left align-middle font-medium text-gray-600 [&:has([role=checkbox])]:pr-0",
+      "px-4 py-3 text-left align-middle font-medium text-gray-600 dark:text-gray-300 [&:has([role=checkbox])]:pr-0",
       className
     )}
     {...props}
@@ -83,7 +83,7 @@ const TableCell = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <td
     ref={ref}
-    className={cn("px-4 py-4 align-middle [&:has([role=checkbox])]:pr-0", className)}
+    className={cn("px-4 py-4 align-middle dark:text-gray-200 [&:has([role=checkbox])]:pr-0", className)}
     {...props}
   />
 ))
@@ -95,7 +95,7 @@ const TableCaption = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <caption
     ref={ref}
-    className={cn("mt-4 text-sm text-gray-500", className)}
+    className={cn("mt-4 text-sm text-gray-500 dark:text-gray-400", className)}
     {...props}
   />
 ))

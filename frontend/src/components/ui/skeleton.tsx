@@ -13,7 +13,7 @@ const Skeleton = ({ className, count = 1, ...props }: SkeletonProps) => {
         {Array.from({ length: count }).map((_, index) => (
           <div
             key={index}
-            className={cn("animate-pulse rounded-md bg-gray-200", className)}
+            className={cn("animate-pulse rounded-md bg-gray-200 dark:bg-gray-700", className)}
             {...props}
           />
         ))}
@@ -23,7 +23,7 @@ const Skeleton = ({ className, count = 1, ...props }: SkeletonProps) => {
   
   return (
     <div
-      className={cn("animate-pulse rounded-md bg-gray-200", className)}
+      className={cn("animate-pulse rounded-md bg-gray-200 dark:bg-gray-700", className)}
       {...props}
     />
   )

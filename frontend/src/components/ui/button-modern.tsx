@@ -31,23 +31,23 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const variantClasses = {
-      primary: 'bg-primary-500 text-white hover:bg-primary-600 focus:ring-primary-500',
-      secondary: 'bg-secondary-500 text-white hover:bg-secondary-600 focus:ring-secondary-500',
-      outline: 'border border-gray-300 bg-transparent text-gray-700 hover:bg-gray-50 focus:ring-gray-500',
-      ghost: 'bg-transparent text-gray-700 hover:bg-gray-100 focus:ring-gray-500',
-      link: 'bg-transparent text-primary-500 hover:underline p-0 h-auto focus:ring-0',
-      danger: 'bg-red-500 text-white hover:bg-red-600 focus:ring-red-500',
+      primary: 'bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500 shadow-sm dark:bg-indigo-600 dark:hover:bg-indigo-700 dark:text-white dark:focus:ring-indigo-400',
+      secondary: 'bg-gray-600 text-white hover:bg-gray-700 focus:ring-gray-500 shadow-sm dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200 dark:focus:ring-gray-500',
+      outline: 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-400 focus:ring-gray-500 dark:border-gray-600 dark:bg-transparent dark:text-gray-200 dark:hover:border-gray-500 dark:hover:text-white dark:hover:bg-gray-800',
+      ghost: 'bg-transparent text-gray-700 hover:bg-gray-100 focus:ring-gray-500 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white',
+      link: 'bg-transparent text-indigo-600 hover:text-indigo-700 hover:underline p-0 h-auto focus:ring-0 dark:text-indigo-400 dark:hover:text-indigo-300',
+      danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 shadow-sm dark:bg-red-700 dark:hover:bg-red-800 dark:text-white',
     }
 
     const sizeClasses = {
       sm: 'text-sm px-3 py-1.5 h-8',
-      md: 'text-sm px-4 py-2 h-10',
+      md: 'text-sm px-4 py-2.5 h-10',
       lg: 'text-base px-6 py-3 h-12',
     }
 
     const baseStyles = cn(
       'relative inline-flex items-center justify-center rounded-md font-medium transition-colors',
-      'focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none',
+      'focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none dark:focus:ring-offset-gray-900',
       variantClasses[variant],
       sizeClasses[size],
       fullWidth && 'w-full',

@@ -92,41 +92,77 @@ export function Toast({
   showProgress = true,
   ...props 
 }: ToastProps) {
-  const [timeLeft, setTimeLeft] = React.useState(100);
-  
+  // Use refs instead of state to avoid rendering loops
+  const progressRef = React.useRef<HTMLDivElement>(null);
+  const timerRef = React.useRef<NodeJS.Timeout | null>(null);
+  const startTimeRef = React.useRef<number>(Date.now());
+  const durationRef = React.useRef<number>(5000); // Default 5 seconds
+
+  // Set up the timer animation without using state updates
   React.useEffect(() => {
-    if (showProgress) {
-      const timer = setInterval(() => {
-        setTimeLeft(prev => Math.max(prev - 2, 0));
-      }, 100);
+    if (showProgress && progressRef.current) {
+      // Reset start time when component mounts
+      startTimeRef.current = Date.now();
+
+      // Animation function
+      const animateProgress = () => {
+        if (!progressRef.current) return;
+        
+        const elapsed = Date.now() - startTimeRef.current;
+        const percentage = 100 - Math.min(100, (elapsed / durationRef.current) * 100);
+        
+        // Apply width directly to the DOM element
+        progressRef.current.style.width = `${percentage}%`;
+        
+        // Stop the timer when progress is complete
+        if (percentage <= 0) {
+          if (timerRef.current) {
+            clearInterval(timerRef.current);
+            timerRef.current = null;
+          }
+          return;
+        }
+        
+        // Schedule next frame
+        timerRef.current = setTimeout(animateProgress, 16); // ~60fps
+      };
       
-      return () => clearInterval(timer);
+      // Start animation
+      animateProgress();
     }
-  }, [showProgress]);
+    
+    // Cleanup function
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, [showProgress]); // Only depend on showProgress
   
   const baseStyles = "pointer-events-auto relative w-full max-w-sm rounded-lg shadow-lg overflow-hidden"
   const typeStyles = {
-    default: "bg-white text-gray-900 border border-gray-200",
-    success: "bg-green-50 text-green-800 border border-green-200",
-    error: "bg-red-50 text-red-800 border border-red-200",
-    warning: "bg-yellow-50 text-yellow-800 border border-yellow-200",
-    info: "bg-blue-50 text-blue-800 border border-blue-200"
+    default: "bg-white text-gray-900 border border-gray-200 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700",
+    success: "bg-green-50 text-green-800 border border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800/30",
+    error: "bg-red-50 text-red-800 border border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800/30",
+    warning: "bg-yellow-50 text-yellow-800 border border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800/30",
+    info: "bg-blue-50 text-blue-800 border border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800/30"
   }
   
   const iconBackgroundStyles = {
-    default: "bg-gray-100",
-    success: "bg-green-100",
-    error: "bg-red-100",
-    warning: "bg-yellow-100",
-    info: "bg-blue-100"
+    default: "bg-gray-100 dark:bg-gray-700",
+    success: "bg-green-100 dark:bg-green-800/50",
+    error: "bg-red-100 dark:bg-red-800/50",
+    warning: "bg-yellow-100 dark:bg-yellow-800/50",
+    info: "bg-blue-100 dark:bg-blue-800/50"
   }
   
   const progressBarColors = {
-    default: "bg-gray-300",
-    success: "bg-green-300",
-    error: "bg-red-300",
-    warning: "bg-yellow-300",
-    info: "bg-blue-300"
+    default: "bg-gray-300 dark:bg-gray-600",
+    success: "bg-green-300 dark:bg-green-700",
+    error: "bg-red-300 dark:bg-red-700",
+    warning: "bg-yellow-300 dark:bg-yellow-700",
+    info: "bg-blue-300 dark:bg-blue-700"
   }
 
   const getIcon = () => {
@@ -155,7 +191,8 @@ export function Toast({
       {showProgress && (
         <div 
           className={cn("h-1 transition-all duration-100", progressBarColors[type])}
-          style={{ width: `${timeLeft}%` }}
+          ref={progressRef}
+          style={{ width: "100%" }}
         />
       )}
       

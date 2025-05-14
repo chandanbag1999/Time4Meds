@@ -103,7 +103,7 @@ const Sheet = ({
       {/* Sheet content */}
       <div
         className={cn(
-          "fixed bg-white shadow-lg border border-gray-200",
+          "fixed bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700",
           positionClasses[position],
           sizeClasses[position][size],
           animationClasses[position],
@@ -124,7 +124,7 @@ const SheetHeader = ({
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      "flex flex-col space-y-1.5 px-6 py-4 border-b border-gray-100",
+      "flex flex-col space-y-1.5 px-6 py-4 border-b border-gray-100 dark:border-gray-700",
       className
     )}
     {...props}
@@ -137,7 +137,7 @@ const SheetTitle = ({
 }: React.HTMLAttributes<HTMLHeadingElement>) => (
   <h3
     className={cn(
-      "text-lg font-semibold leading-none tracking-tight",
+      "text-lg font-semibold leading-none tracking-tight dark:text-gray-100",
       className
     )}
     {...props}
@@ -149,7 +149,7 @@ const SheetDescription = ({
   ...props
 }: React.HTMLAttributes<HTMLParagraphElement>) => (
   <p
-    className={cn("text-sm text-gray-500", className)}
+    className={cn("text-sm text-gray-500 dark:text-gray-400", className)}
     {...props}
   />
 );
@@ -170,7 +170,7 @@ const SheetFooter = ({
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 px-6 py-4 border-t border-gray-100",
+      "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 px-6 py-4 border-t border-gray-100 dark:border-gray-700",
       className
     )}
     {...props}

@@ -100,7 +100,19 @@ const apiService = {
   // Get request
   get: <T>(url: string, config?: AxiosRequestConfig): Promise<T> => 
     api.get<T>(url, config)
-      .then(response => validateResponseData<T>(response.data))
+      .then(response => {
+        // Special handling for medicines endpoint response structure
+        if (url.includes('/medicines')) {
+          // Check if response.data.data exists (a common API structure)
+          if (response.data && typeof response.data === 'object' && 'data' in response.data) {
+            return validateResponseData<T>(response.data.data);
+          }
+          // Direct response.data for some API designs
+          return validateResponseData<T>(response.data);
+        }
+        
+        return validateResponseData<T>(response.data);
+      })
       .catch(error => {
         console.error(`GET request failed for ${url}:`, error);
         // For endpoints that typically return arrays, return empty array

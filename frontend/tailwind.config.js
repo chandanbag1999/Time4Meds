@@ -18,6 +18,7 @@ export default {
         'slide-in-from-left': 'slideInFromLeft 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
         'slide-in-from-top': 'slideInFromTop 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
         'slide-in-from-bottom': 'slideInFromBottom 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+        'blob': 'blob 7s infinite',
       },
       keyframes: {
         slideIn: {
@@ -47,6 +48,20 @@ export default {
         slideInFromBottom: {
           '0%': { transform: 'translateY(100%)' },
           '100%': { transform: 'translateY(0)' },
+        },
+        blob: {
+          '0%': {
+            transform: 'translate(0px, 0px) scale(1)',
+          },
+          '33%': {
+            transform: 'translate(30px, -50px) scale(1.1)',
+          },
+          '66%': {
+            transform: 'translate(-20px, 20px) scale(0.9)',
+          },
+          '100%': {
+            transform: 'translate(0px, 0px) scale(1)',
+          },
         },
       },
       colors: {
@@ -142,17 +157,47 @@ export default {
           borderRadius: '10px',
           border: '1px solid rgba(255, 255, 255, 0.18)',
         },
+        '.dark .glass-effect': {
+          background: 'linear-gradient(135deg, rgba(30, 30, 40, 0.5), rgba(20, 20, 30, 0.5))',
+          backdropFilter: 'blur(8px)',
+          boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.2)',
+          borderRadius: '10px',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+        },
         '.mobile-card': {
           borderRadius: '20px',
           boxShadow: '0 4px 20px rgba(0, 0, 0, 0.07)',
           padding: '16px',
           background: 'white',
         },
+        '.dark .mobile-card': {
+          background: '#1a1d23',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+          borderColor: 'rgba(255, 255, 255, 0.08)',
+        },
         '.desktop-card': {
           borderRadius: '8px',
           boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04)',
           padding: '24px',
           background: 'white',
+        },
+        '.dark .desktop-card': {
+          background: '#1a1d23',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+          borderColor: 'rgba(255, 255, 255, 0.08)',
+        },
+        '.animation-delay-2000': {
+          'animation-delay': '2s',
+        },
+        '.animation-delay-4000': {
+          'animation-delay': '4s',
+        },
+        '.dark-gradient': {
+          background: 'linear-gradient(to bottom, #1a1d23, #111318)',
+        },
+        '.dark-card': {
+          background: '#1e2028',
+          borderColor: 'rgba(255, 255, 255, 0.08)',
         },
       }
       addUtilities(newUtilities)

@@ -1,586 +1,228 @@
-import { useState, useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
-import { Button } from '@/components/ui/button-modern'
-import { Container } from '@/components/ui/container'
-import { Card } from '@/components/ui/card'
+import { useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button-modern';
+import { Container } from '@/components/ui/container';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { motion } from 'framer-motion';
+import { Zap, BarChart2, Users, CheckCircle, ArrowRight } from 'lucide-react';
+
+const SectionWrapper: React.FC<{ children: React.ReactNode; className?: string, id?: string }> = ({ children, className = '', id }) => (
+  <motion.section
+    id={id}
+    initial={{ opacity: 0, y: 20 }}
+    whileInView={{ opacity: 1, y: 0 }}
+    viewport={{ once: true, amount: 0.2 }}
+    transition={{ duration: 0.6 }}
+    className={`py-16 md:py-24 ${className}`}
+  >
+    {children}
+  </motion.section>
+);
 
 export default function Home() {
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
-  
-  // Refs for sections
-  const featuresRef = useRef<HTMLElement>(null)
-  const howItWorksRef = useRef<HTMLElement>(null)
-  const pricingRef = useRef<HTMLElement>(null)
-  const aboutRef = useRef<HTMLElement>(null)
-
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768)
-      if (window.innerWidth >= 768) {
-        setIsMenuOpen(false)
-      }
+  // Smooth scroll for internal links - simplified to avoid Promise issues
+  const handleInternalLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
+    e.preventDefault();
+    const targetElement = document.getElementById(targetId.substring(1));
+    if (targetElement) {
+      // Using standard scroll instead of smooth scroll behavior to avoid Promise-related issues
+      targetElement.scrollIntoView();
     }
+  };
 
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
-
-  // Scroll to section function
-  const scrollToSection = (ref: React.RefObject<HTMLElement>) => {
-    if (ref.current) {
-      ref.current.scrollIntoView({ behavior: 'smooth' })
-      // Close mobile menu if open
-      if (isMenuOpen) {
-        setIsMenuOpen(false)
-      }
-    }
-  }
+  const navLinkClasses = "text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-300";
 
   return (
-    <div className="min-h-screen flex flex-col w-full">
-      {/* Header/Navbar */}
-      <header className="bg-white border-b border-gray-100 sticky top-0 z-10 w-screen">
-        <Container className="py-3 flex justify-between items-center" size="full">
-          <Link to="/" className="font-bold text-xl text-primary-600">
-            Time4Meds
+    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 w-full font-sans">
+      {/* Header */}
+      <header className="sticky top-0 z-50 w-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800">
+        <Container size="full" className="py-4 px-4 md:px-6 lg:px-8 flex justify-between items-center">
+          <Link to="/" className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg shadow-md shadow-indigo-500/30">
+              T4M
+            </div>
+            <span className="font-semibold text-xl bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">
+              Time4Meds
+            </span>
           </Link>
-          {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-6">
-            <button 
-              onClick={() => scrollToSection(featuresRef)} 
-              className="text-sm font-medium text-gray-700 hover:text-primary-600 cursor-pointer"
-            >
-              Features
-            </button>
-            <button 
-              onClick={() => scrollToSection(howItWorksRef)} 
-              className="text-sm font-medium text-gray-700 hover:text-primary-600 cursor-pointer"
-            >
-              How it Works
-            </button>
-            <button 
-              onClick={() => scrollToSection(pricingRef)} 
-              className="text-sm font-medium text-gray-700 hover:text-primary-600 cursor-pointer"
-            >
-              Pricing
-            </button>
-            <button 
-              onClick={() => scrollToSection(aboutRef)} 
-              className="text-sm font-medium text-gray-700 hover:text-primary-600 cursor-pointer"
-            >
-              About
-            </button>
+            {/* Using direct href with hash instead of click handler to avoid Promise issues */}
+            <a href="#features" className={navLinkClasses}>Features</a>
+            <a href="#pricing" className={navLinkClasses}>Pricing</a>
+            <a href="#about" className={navLinkClasses}>About</a>
           </nav>
           <div className="flex items-center space-x-3">
-            {/* Mobile menu toggle */}
-            <button 
-              className="md:hidden p-2 text-gray-500"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              aria-label="Toggle menu"
-            >
-              {isMenuOpen ? (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              )}
-            </button>
-            <Link to="/login" className="text-sm font-medium text-gray-700 hover:text-primary-600">Log In</Link>
-            <Button 
-              variant="primary" 
-              size="sm" 
-              href="/register"
-              asChild
-            >
-              Sign Up
+            <ThemeToggle />
+            <Button variant="outline" size="sm" href="/login" asChild className="hidden sm:flex rounded-lg border-gray-300 dark:border-gray-700 hover:border-indigo-500 dark:hover:border-indigo-400">
+                Log In
             </Button>
+            <Button variant="primary" size="sm" href="/register" asChild className="rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-md shadow-indigo-500/30">
+                Sign Up Free
+              </Button>
           </div>
         </Container>
-        
-        {/* Mobile menu */}
-        {isMenuOpen && (
-          <div className="md:hidden bg-white border-b border-gray-200 shadow-lg">
-            <div className="py-3 px-4 space-y-3">
-              <button 
-                onClick={() => scrollToSection(featuresRef)}
-                className="block w-full text-left py-2 text-sm font-medium text-gray-700 hover:text-primary-600"
-              >
-                Features
-              </button>
-              <button 
-                onClick={() => scrollToSection(howItWorksRef)}
-                className="block w-full text-left py-2 text-sm font-medium text-gray-700 hover:text-primary-600"
-              >
-                How it Works
-              </button>
-              <button 
-                onClick={() => scrollToSection(pricingRef)}
-                className="block w-full text-left py-2 text-sm font-medium text-gray-700 hover:text-primary-600"
-              >
-                Pricing
-              </button>
-              <button 
-                onClick={() => scrollToSection(aboutRef)}
-                className="block w-full text-left py-2 text-sm font-medium text-gray-700 hover:text-primary-600"
-              >
-                About
-              </button>
-            </div>
-          </div>
-        )}
       </header>
 
       {/* Hero Section */}
-      <section className="py-16 md:py-20 w-full bg-white">
-        <Container size={isMobile ? "lg" : "2xl"} className="flex flex-col md:flex-row md:items-center md:justify-between gap-10">
-          <div className="md:w-1/2 max-w-lg">
-            <h1 className="text-3xl md:text-4xl font-bold mb-4">
-              Never Miss Your <span className="text-primary-600">Medication</span> Again
-            </h1>
-            <p className="text-gray-600 mb-6">
-              Time4Meds is an advanced medication reminder and tracking app to help you stay on top of your health. Simple, reliable medication management for you and your loved ones.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3">
+      <SectionWrapper className="pt-24 md:pt-32 text-center overflow-hidden">
+        <Container size="2xl" className="relative">
+          <motion.div 
+            className="absolute -top-24 -left-24 w-72 h-72 bg-indigo-200 dark:bg-indigo-700/30 rounded-full mix-blend-multiply dark:mix-blend-normal filter blur-3xl opacity-50 animate-blob"
+            initial={{ scale: 0.8, opacity: 0}}
+            animate={{ scale: 1, opacity: 0.5}}
+            transition={{ duration: 2, repeat: Infinity, repeatType: "mirror"}}
+          />
+          <motion.div 
+            className="absolute -bottom-24 -right-24 w-72 h-72 bg-purple-200 dark:bg-purple-700/30 rounded-full mix-blend-multiply dark:mix-blend-normal filter blur-3xl opacity-50 animate-blob animation-delay-2000"
+            initial={{ scale: 0.8, opacity: 0}}
+            animate={{ scale: 1, opacity: 0.5}}
+            transition={{ duration: 2.5, repeat: Infinity, repeatType: "mirror", delay: 0.5}}
+           />
+
+          <motion.h1 
+            className="text-4xl md:text-6xl font-extrabold mb-6 tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400 leading-tight z-10 relative"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.2 }}
+          >
+            Never Miss a Dose Again.
+            <br className="hidden sm:inline" />
+            Your Health, Simplified.
+          </motion.h1>
+          <motion.p 
+            className="text-lg md:text-xl text-gray-600 dark:text-gray-300 mb-10 max-w-2xl mx-auto leading-relaxed z-10 relative"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.4 }}
+          >
+            Time4Meds is the intelligent medication reminder and tracker that helps you manage your health effortlessly, so you can focus on living your life.
+          </motion.p>
+          <motion.div 
+            className="flex flex-col sm:flex-row justify-center items-center gap-4 z-10 relative"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.6 }}
+          >
               <Button 
                 variant="primary" 
-                size="md" 
+                size="lg" 
                 href="/register"
                 asChild
-                className="px-6"
+              className="w-full sm:w-auto rounded-lg text-lg px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/40 hover:shadow-xl hover:shadow-indigo-600/50 transition-all duration-300 transform hover:scale-105"
               >
                 Get Started - It's Free
               </Button>
+            {/* Using direct href instead of onClick handler */}
               <Button 
                 variant="outline" 
-                size="md" 
-                href="/how-it-works"
+                size="lg" 
+              href="#features"
                 asChild
-              >
-                See how it works
+              className="w-full sm:w-auto rounded-lg text-lg px-8 py-3 border-gray-300 dark:border-gray-700 hover:border-indigo-500 dark:hover:border-indigo-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-300 group"
+            >
+              Learn More <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Button>
-            </div>
-            <div className="mt-6 flex items-center text-sm text-gray-500">
-              <span className="flex items-center">
-                <span className="text-gray-400">Trusted by</span>
-                <span className="font-semibold ml-1">10,000+</span>
-                <span className="ml-1">users</span>
-              </span>
-            </div>
-          </div>
-          
-          <div className="md:w-1/2 flex justify-center md:justify-end mt-10 md:mt-0">
-            <div className="relative w-64 md:w-72 h-auto">
-              <div className="absolute inset-0 bg-primary-100 rounded-3xl transform rotate-6 scale-95 opacity-20"></div>
-              <div className="relative border-8 border-gray-800 rounded-3xl overflow-hidden bg-white shadow-xl">
-                <div className="w-full h-[450px] bg-gradient-to-b from-primary-100 to-primary-200 flex flex-col items-center justify-center p-6 text-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-primary-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                  <h3 className="text-xl font-bold text-gray-800 mb-2">Time4Meds</h3>
-                  <p className="text-sm text-gray-600">Never miss your medication again with smart reminders</p>
-                  
-                  <div className="mt-8 w-full bg-white rounded-lg shadow-sm p-4">
-                    <div className="flex items-center mb-4">
-                      <div className="w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center text-white text-xs font-bold">
-                        T4M
-                      </div>
-                      <div className="ml-3">
-                        <div className="h-2 w-24 bg-gray-200 rounded"></div>
-                        <div className="h-2 w-16 bg-gray-200 rounded mt-1"></div>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-3">
-                      {[1, 2, 3].map((item) => (
-                        <div key={item} className="flex items-center p-2 border border-gray-100 rounded-md">
-                          <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                          <div className="ml-3 flex-grow">
-                            <div className="h-2 w-20 bg-gray-200 rounded"></div>
-                            <div className="h-2 w-12 bg-gray-200 rounded mt-1"></div>
-                          </div>
-                          <div className="text-xs text-primary-600 font-medium">8:00 AM</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          </motion.div>
         </Container>
-      </section>
+      </SectionWrapper>
 
       {/* Features Section */}
-      <section ref={featuresRef} className="py-16 bg-gray-50 w-full">
-        <Container size={isMobile ? "lg" : "2xl"}>
-          <div className="text-center mb-12">
-            <h2 className="text-2xl md:text-3xl font-bold mb-3">Smart Features for Better Health</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Time4Meds offers intelligent tools to simplify medication management and improve adherence.
+      <SectionWrapper id="features" className="bg-white dark:bg-gray-800/50">
+        <Container size="2xl">
+          <div className="text-center mb-12 md:mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-3 tracking-tight">Why Choose Time4Meds?</h2>
+            <p className="text-lg text-gray-600 dark:text-gray-300 max-w-xl mx-auto">
+              Packed with features designed for your peace of mind and better health outcomes.
             </p>
           </div>
-
-          <div className="grid md:grid-cols-3 gap-8 w-full">
-            <Card className="p-6 border border-gray-200">
-              <div className="mb-4">
-                <h3 className="text-lg font-semibold mb-2">Smart Reminders</h3>
-                <p className="text-gray-600 text-sm">
-                  Never miss a dose with timely notifications and intelligent reminders that adapt to your habits.
-                </p>
-              </div>
-            </Card>
-            
-            <Card className="p-6 border border-gray-200">
-              <div className="mb-4">
-                <h3 className="text-lg font-semibold mb-2">Medication Tracking</h3>
-                <p className="text-gray-600 text-sm">
-                  Track your medication intake and maintain a complete history of your health journey.
-                </p>
-              </div>
-            </Card>
-            
-            <Card className="p-6 border border-gray-200">
-              <div className="mb-4">
-                <h3 className="text-lg font-semibold mb-2">Family Sharing</h3>
-                <p className="text-gray-600 text-sm">
-                  Manage medications for family members and loved ones all from one account.
-                </p>
-              </div>
-            </Card>
-            
-            <Card className="p-6 border border-gray-200">
-              <div className="mb-4">
-                <h3 className="text-lg font-semibold mb-2">Adherence Reports</h3>
-                <p className="text-gray-600 text-sm">
-                  Detailed reports and insights on your medication usage to share with your healthcare providers.
-                </p>
-              </div>
-            </Card>
-            
-            <Card className="p-6 border border-gray-200">
-              <div className="mb-4">
-                <h3 className="text-lg font-semibold mb-2">Cloud Sync</h3>
-                <p className="text-gray-600 text-sm">
-                  Access your data securely across all devices for seamless medication tracking.
-                </p>
-              </div>
-            </Card>
-            
-            <Card className="p-6 border border-gray-200">
-              <div className="mb-4">
-                <h3 className="text-lg font-semibold mb-2">Privacy & Security</h3>
-                <p className="text-gray-600 text-sm">
-                  Your health data is encrypted and protected using secure methods.
-                </p>
-              </div>
-            </Card>
-          </div>
-        </Container>
-      </section>
-
-      {/* How It Works Section */}
-      <section ref={howItWorksRef} className="py-16 bg-white w-full">
-        <Container size={isMobile ? "lg" : "2xl"}>
-          <div className="text-center mb-12">
-            <h2 className="text-2xl md:text-3xl font-bold mb-2">How Time4Meds Works</h2>
-            <p className="text-gray-600">A simple 3-step process to help you stay on top of your medication</p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8 w-full max-w-4xl mx-auto">
-            <div className="flex flex-col items-center text-center">
-              <div className="w-10 h-10 rounded-full bg-primary-500 text-white flex items-center justify-center mb-4">
-                1
-              </div>
-              <h3 className="text-lg font-semibold mb-2">Create Your Account</h3>
-              <p className="text-gray-600 text-sm">
-                Sign up in minutes using your email, Google, or Instagram account
-              </p>
-            </div>
-            
-            <div className="flex flex-col items-center text-center">
-              <div className="w-10 h-10 rounded-full bg-primary-500 text-white flex items-center justify-center mb-4">
-                2
-              </div>
-              <h3 className="text-lg font-semibold mb-2">Add Your Medications</h3>
-              <p className="text-gray-600 text-sm">
-                Input your medications, dosages, and schedules
-              </p>
-            </div>
-            
-            <div className="flex flex-col items-center text-center">
-              <div className="w-10 h-10 rounded-full bg-primary-500 text-white flex items-center justify-center mb-4">
-                3
-              </div>
-              <h3 className="text-lg font-semibold mb-2">Get Smart Reminders</h3>
-              <p className="text-gray-600 text-sm">
-                Receive customized alerts on time to take your medications
-              </p>
-            </div>
-          </div>
-
-          <div className="flex justify-center mt-12">
-            <Button 
-              variant="primary" 
-              href="/register"
-              asChild
-            >
-              Get Started Now
-            </Button>
-          </div>
-        </Container>
-      </section>
-
-      {/* Seamless Experience Section */}
-      <section className="py-16 bg-gray-50 w-full">
-        <Container size={isMobile ? "lg" : "2xl"}>
-          <div className="text-center mb-12">
-            <h2 className="text-2xl md:text-3xl font-bold mb-2">A Seamless Experience Across All Devices</h2>
-            <p className="text-gray-600">
-              Whether on desktop, tablet, or mobile, Time4Meds provides a beautiful and intuitive interface.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8 w-full">
-            <Card className="p-6 border border-gray-200">
-              <div className="h-48 bg-gray-200 rounded-lg mb-4"></div>
-              <h3 className="text-lg font-semibold mb-2">Smart Dashboard</h3>
-              <p className="text-gray-600 text-sm">
-                Get a complete overview of your medications at a glance
-              </p>
-            </Card>
-            
-            <Card className="p-6 border border-gray-200">
-              <div className="h-48 bg-gray-200 rounded-lg mb-4"></div>
-              <h3 className="text-lg font-semibold mb-2">Medication Management</h3>
-              <p className="text-gray-600 text-sm">
-                Easily add, edit, and manage your medications
-              </p>
-            </Card>
-            
-            <Card className="p-6 border border-gray-200">
-              <div className="h-48 bg-gray-200 rounded-lg mb-4"></div>
-              <h3 className="text-lg font-semibold mb-2">Smart Reminders</h3>
-              <p className="text-gray-600 text-sm">
-                Timely notifications that adapt to your schedule
-              </p>
-            </Card>
-          </div>
-        </Container>
-      </section>
-
-      {/* Pricing Section */}
-      <section ref={pricingRef} className="py-16 bg-white w-full">
-        <Container size={isMobile ? "lg" : "2xl"}>
-          <div className="text-center mb-12">
-            <h2 className="text-2xl md:text-3xl font-bold mb-2">Simple, Transparent Pricing</h2>
-            <p className="text-gray-600">
-              Choose the plan that's right for you, with no hidden fees
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8 w-full max-w-4xl mx-auto">
-            <Card className="p-6 border border-gray-200">
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-1">Free</h3>
-                <p className="text-xs text-gray-500">Perfect to get started</p>
-                <div className="mt-4">
-                  <span className="text-3xl font-bold">$0</span>
-                  <span className="text-gray-500 text-sm">/month</span>
-                </div>
-              </div>
-              <ul className="space-y-3 mb-6">
-                <li className="text-sm text-gray-600">Up to 3 medications</li>
-                <li className="text-sm text-gray-600">Basic reminders</li>
-                <li className="text-sm text-gray-600">Medication tracking</li>
-                <li className="text-sm text-gray-600">Activity history</li>
-                <li className="text-sm text-gray-600">Standard support</li>
-              </ul>
-              <Button 
-                variant="outline" 
-                size="md" 
-                href="/register"
-                asChild
-                className="w-full"
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                icon: <Zap className="w-10 h-10 text-indigo-500 dark:text-indigo-400" />,
+                title: "Smart Reminders",
+                description: "Intelligent, customizable notifications so you never forget a medication."
+              },
+              {
+                icon: <BarChart2 className="w-10 h-10 text-purple-500 dark:text-purple-400" />,
+                title: "Progress Tracking",
+                description: "Monitor your adherence and share insightful reports with your doctor."
+              },
+              {
+                icon: <Users className="w-10 h-10 text-pink-500 dark:text-pink-400" />,
+                title: "Family & Caregiver Mode",
+                description: "Easily manage medications for your loved ones, all in one place."
+              }
+            ].map((feature, index) => (
+              <motion.div
+                key={index}
+                className="bg-gray-50 dark:bg-gray-800 p-6 rounded-xl shadow-sm hover:shadow-lg transition-shadow duration-300 border border-transparent hover:border-indigo-300 dark:hover:border-indigo-600"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 + index * 0.1 }}
               >
-                Sign Up Free
-              </Button>
-            </Card>
-            
-            <Card className="p-6 border-2 border-primary-500 relative">
-              <div className="absolute top-0 right-0 bg-primary-500 text-white text-xs px-3 py-1 uppercase font-bold">
-                Popular
-              </div>
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-1">Premium</h3>
-                <p className="text-xs text-gray-500">For individuals</p>
-                <div className="mt-4">
-                  <span className="text-3xl font-bold">$4.99</span>
-                  <span className="text-gray-500 text-sm">/month</span>
-                </div>
-              </div>
-              <ul className="space-y-3 mb-6">
-                <li className="text-sm text-gray-600">Unlimited medications</li>
-                <li className="text-sm text-gray-600">Smart reminders</li>
-                <li className="text-sm text-gray-600">Detailed tracking</li>
-                <li className="text-sm text-gray-600">Basic reports</li>
-                <li className="text-sm text-gray-600">Priority support</li>
-              </ul>
-              <Button 
-                variant="primary" 
-                size="md" 
-                href="/register"
-                asChild
-                className="w-full"
-              >
-                Get Premium
-              </Button>
-            </Card>
-            
-            <Card className="p-6 border border-gray-200">
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-1">Family</h3>
-                <p className="text-xs text-gray-500">For families & caregivers</p>
-                <div className="mt-4">
-                  <span className="text-3xl font-bold">$9.99</span>
-                  <span className="text-gray-500 text-sm">/month</span>
-                </div>
-              </div>
-              <ul className="space-y-3 mb-6">
-                <li className="text-sm text-gray-600">Up to 5 family members</li>
-                <li className="text-sm text-gray-600">Caregiver access</li>
-                <li className="text-sm text-gray-600">Enhanced reports</li>
-                <li className="text-sm text-gray-600">Priority support</li>
-              </ul>
-              <Button 
-                variant="outline" 
-                size="md" 
-                href="/register"
-                asChild
-                className="w-full"
-              >
-                Get Family Plan
-              </Button>
-            </Card>
+                <div className="flex items-center justify-center w-16 h-16 rounded-full bg-indigo-100 dark:bg-indigo-900/30 mb-5">
+                    {feature.icon}
+                  </div>
+                <h3 className="text-xl font-semibold mb-3">{feature.title}</h3>
+                <p className="text-gray-600 dark:text-gray-400 leading-relaxed">{feature.description}</p>
+              </motion.div>
+            ))}
           </div>
         </Container>
-      </section>
+      </SectionWrapper>
 
-      {/* Testimonials Section */}
-      <section className="py-16 bg-gray-50 w-full">
-        <Container size={isMobile ? "lg" : "2xl"}>
-          <div className="text-center mb-12">
-            <h2 className="text-2xl md:text-3xl font-bold mb-2">What Our Users Say</h2>
-            <p className="text-gray-600">
-              Don't just take our word for it - hear from some of our satisfied users
+      {/* Placeholder for Pricing Section (if needed in future) */}
+      <SectionWrapper id="pricing" className="bg-gray-50 dark:bg-gray-900">
+        <Container size="2xl" className="text-center">
+            <h2 className="text-3xl md:text-4xl font-bold mb-3 tracking-tight">Simple, Transparent Pricing</h2>
+            <p className="text-lg text-gray-600 dark:text-gray-300 max-w-xl mx-auto mb-10">
+                Choose a plan that fits your needs. All plans start with a free trial.
             </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8 w-full">
-            <Card className="p-6 border border-gray-200">
-              <p className="text-gray-600 mb-4 text-sm italic">
-                "Time4Meds has been a game-changer for me. I used to forget my blood pressure medication at least once a week, but now I'm much more consistent."
-              </p>
-              <div className="flex items-center">
-                <div className="w-10 h-10 bg-gray-200 rounded-full mr-3"></div>
-                <div>
-                  <p className="font-semibold text-sm">Sarah Johnson</p>
-                  <p className="text-xs text-gray-500">Using for 3 months</p>
-                </div>
-              </div>
-            </Card>
-            
-            <Card className="p-6 border border-gray-200">
-              <p className="text-gray-600 mb-4 text-sm italic">
-                "As a caregiver for my dad, this app helped me manage his medications effectively. I can track everything remotely, which gives me peace of mind."
-              </p>
-              <div className="flex items-center">
-                <div className="w-10 h-10 bg-gray-200 rounded-full mr-3"></div>
-                <div>
-                  <p className="font-semibold text-sm">Michael Torres</p>
-                  <p className="text-xs text-gray-500">Using for 6+ months</p>
-                </div>
-              </div>
-            </Card>
-            
-            <Card className="p-6 border border-gray-200">
-              <p className="text-gray-600 mb-4 text-sm italic">
-                "The interface is so intuitive! I love how my upcoming medication alerts appear and how the adherence tracking works."
-              </p>
-              <div className="flex items-center">
-                <div className="w-10 h-10 bg-gray-200 rounded-full mr-3"></div>
-                <div>
-                  <p className="font-semibold text-sm">Emily Chen</p>
-                  <p className="text-xs text-gray-500">Using for 1+ month</p>
-                </div>
-              </div>
-            </Card>
-          </div>
+            {/* Pricing cards would go here */}
+            <p className="text-md text-gray-500 dark:text-gray-400">Pricing details coming soon...</p>
         </Container>
-      </section>
+      </SectionWrapper>
 
-      {/* About/Footer Section */}
-      <footer ref={aboutRef} className="bg-gray-900 text-gray-300 py-12 w-screen">
-        <Container size="full">
-          <div className="grid md:grid-cols-4 gap-8 mb-8">
-            <div>
-              <h3 className="font-bold text-white text-lg mb-4">Time4Meds</h3>
-              <p className="text-sm text-gray-400 mb-4">
-                Smart medication reminders for a healthier life
-              </p>
+      {/* Call to Action Section (About can be part of Footer or its own small section) */}
+      <SectionWrapper id="about" className="bg-gradient-to-r from-indigo-600 to-purple-700 text-white">
+        <Container size="2xl" className="text-center">
+          <h2 className="text-3xl md:text-4xl font-bold mb-6 tracking-tight">Ready to Take Control of Your Health?</h2>
+          <p className="text-lg md:text-xl text-indigo-100 dark:text-indigo-200 mb-10 max-w-2xl mx-auto">
+            Join thousands of users who trust Time4Meds for their medication management. Sign up today for free!
+          </p>
+                <Button 
+            variant="secondary" 
+                  size="lg" 
+                  href="/register"
+                  asChild
+            className="rounded-lg text-lg px-10 py-4 bg-white text-indigo-600 hover:bg-gray-100 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
+          >
+            Start Your Free Trial Now <CheckCircle className="ml-2 w-6 h-6" />
+                </Button>
+        </Container>
+      </SectionWrapper>
+
+      {/* Footer */}
+      <footer className="bg-gray-100 dark:bg-gray-800 py-12">
+        <Container size="full" className="text-center px-4 md:px-6 lg:px-8 text-gray-600 dark:text-gray-400">
+          <div className="flex justify-center items-center gap-2 mb-4">
+             <div className="w-7 h-7 rounded-md bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-md shadow-sm shadow-indigo-500/30">
+              T4M
             </div>
-            
-            <div>
-              <h4 className="font-semibold text-white mb-4">Company</h4>
-              <ul className="space-y-2 text-sm">
-                <li><Link to="/" className="hover:text-white">About Us</Link></li>
-                <li><Link to="/" className="hover:text-white">Careers</Link></li>
-                <li><Link to="/" className="hover:text-white">Blog</Link></li>
-                <li><Link to="/" className="hover:text-white">Press</Link></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold text-white mb-4">Resources</h4>
-              <ul className="space-y-2 text-sm">
-                <li><Link to="/" className="hover:text-white">Help Center</Link></li>
-                <li><Link to="/" className="hover:text-white">Terms of Service</Link></li>
-                <li><Link to="/" className="hover:text-white">Privacy Policy</Link></li>
-                <li><Link to="/" className="hover:text-white">Contact Us</Link></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold text-white mb-4">Subscribe</h4>
-              <p className="text-sm text-gray-400 mb-3">Get the latest news and updates</p>
-              <div className="flex">
-                <input 
-                  type="email" 
-                  placeholder="Your email address" 
-                  className="px-3 py-2 bg-gray-800 text-white rounded-l-md text-sm w-full focus:outline-none focus:ring-1 focus:ring-primary-500" 
-                />
-                <button className="bg-primary-500 text-white px-3 py-2 rounded-r-md text-sm">
-                  →
-                </button>
+            <span className="font-semibold text-md">
+                  Time4Meds
+                </span>
               </div>
-            </div>
-          </div>
-          
-          <div className="border-t border-gray-800 pt-8 text-sm text-center text-gray-500">
-            <div className="flex justify-between items-center flex-col md:flex-row gap-4">
-              <p>&copy; {new Date().getFullYear()} Time4Meds. All rights reserved.</p>
-              <div className="flex space-x-4">
-                <Link to="/" className="hover:text-white">Privacy Policy</Link>
-                <Link to="/" className="hover:text-white">Terms of Service</Link>
-                <Link to="/" className="hover:text-white">Cookie Policy</Link>
-              </div>
-            </div>
-          </div>
+          <p className="text-sm mb-2">
+            Making medication management simple and effective.
+          </p>
+          <p className="text-sm">
+              &copy; {new Date().getFullYear()} Time4Meds. All rights reserved.
+            <Link to="/privacy" className="ml-2 hover:text-indigo-600 dark:hover:text-indigo-400">Privacy Policy</Link> 
+            | <Link to="/terms" className="ml-1 hover:text-indigo-600 dark:hover:text-indigo-400">Terms of Service</Link>
+          </p>
         </Container>
       </footer>
     </div>
-  )
+  );
 } 

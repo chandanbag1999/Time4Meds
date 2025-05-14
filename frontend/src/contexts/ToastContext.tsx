@@ -1,6 +1,7 @@
 import { createContext, useContext, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Toast, ToastContainer } from '@/components/ui/toast';
+import React from 'react';
 
 type ToastType = 'default' | 'success' | 'error' | 'warning' | 'info';
 type ToastPosition = 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left' | 'top-center' | 'bottom-center';
@@ -46,8 +47,29 @@ export function useToast() {
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [position, setPosition] = useState<ToastPosition>('top-right');
+  // Track toast timeouts for cleanup
+  const toastTimeoutsRef = React.useRef<{[id: string]: NodeJS.Timeout}>({});
 
-  const createToast = (message: string, options?: ToastOptions | ToastType) => {
+  // Clean up all timeouts when unmounting
+  React.useEffect(() => {
+    return () => {
+      Object.values(toastTimeoutsRef.current).forEach(clearTimeout);
+    };
+  }, []);
+
+  // Use useCallback to memoize functions
+  const dismiss = React.useCallback((id: string) => {
+    // Clear timeout if it exists
+    if (toastTimeoutsRef.current[id]) {
+      clearTimeout(toastTimeoutsRef.current[id]);
+      delete toastTimeoutsRef.current[id];
+    }
+    
+    // Use functional update pattern to ensure we're working with the latest state
+    setToasts((prev) => prev.filter((toast) => toast.id !== id));
+  }, []);
+
+  const createToast = React.useCallback((message: string, options?: ToastOptions | ToastType) => {
     // If options is just a string, it's the type
     const isTypeOnly = typeof options === 'string';
     const type = isTypeOnly ? options as ToastType : (options as ToastOptions)?.type || 'default';
@@ -65,41 +87,46 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       duration
     };
     
+    // Use functional update pattern to ensure we're working with the latest state
     setToasts((prev) => [...prev, toastItem]);
     
     // Auto-dismiss after duration
-    setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       dismiss(id);
     }, duration);
+    
+    // Store timeout reference
+    toastTimeoutsRef.current[id] = timeoutId;
 
     return id;
-  };
+  }, [dismiss]);
 
-  const toast = (message: string, options?: ToastOptions | ToastType) => {
+  const toast = React.useCallback((message: string, options?: ToastOptions | ToastType) => {
     return createToast(message, options);
-  };
+  }, [createToast]);
 
-  const success = (message: string, options?: Omit<ToastOptions, 'type'>) => {
+  const success = React.useCallback((message: string, options?: Omit<ToastOptions, 'type'>) => {
     return createToast(message, { ...options, type: 'success' });
-  };
+  }, [createToast]);
 
-  const error = (message: string, options?: Omit<ToastOptions, 'type'>) => {
+  const error = React.useCallback((message: string, options?: Omit<ToastOptions, 'type'>) => {
     return createToast(message, { ...options, type: 'error' });
-  };
+  }, [createToast]);
 
-  const warning = (message: string, options?: Omit<ToastOptions, 'type'>) => {
+  const warning = React.useCallback((message: string, options?: Omit<ToastOptions, 'type'>) => {
     return createToast(message, { ...options, type: 'warning' });
-  };
+  }, [createToast]);
 
-  const info = (message: string, options?: Omit<ToastOptions, 'type'>) => {
+  const info = React.useCallback((message: string, options?: Omit<ToastOptions, 'type'>) => {
     return createToast(message, { ...options, type: 'info' });
-  };
+  }, [createToast]);
 
-  const dismiss = (id: string) => {
-    setToasts((prev) => prev.filter((toast) => toast.id !== id));
-  };
+  const setPositionCallback = React.useCallback((newPosition: ToastPosition) => {
+    setPosition(newPosition);
+  }, []);
 
-  const contextValue: ToastContextType = {
+  // Memoize context value to prevent unnecessary re-renders
+  const contextValue = React.useMemo<ToastContextType>(() => ({
     toast,
     success,
     error,
@@ -107,8 +134,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     info,
     dismiss,
     position,
-    setPosition
-  };
+    setPosition: setPositionCallback
+  }), [toast, success, error, warning, info, dismiss, position, setPositionCallback]);
 
   return (
     <ToastContext.Provider value={contextValue}>

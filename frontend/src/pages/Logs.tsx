@@ -1,19 +1,32 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { LoadingButton } from "@/components/ui/loading-button"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table"
 import { TableSkeleton } from "@/components/ui/table-skeleton"
 import { CardSkeleton } from "@/components/ui/card-skeleton"
 import { useToast } from "@/contexts/ToastContext"
+import apiService, { api } from "@/services/api"
+import LogFilterModal from "@/components/LogFilterModal"
+import type { LogFilters } from "@/components/LogFilterModal"
+import ActiveFilters from "@/components/ActiveFilters"
+import { Filter, Download } from "lucide-react"
 
 interface LogEntry {
   id: number
-  medicine: string
+  medicineName: string
+  medicineId?: string
   status: "taken" | "missed" | "skipped"
   time: string
+  date?: string
   notes: string
+}
+
+interface LogResponse {
+  logs: LogEntry[]
+  totalPages: number
+  currentPage: number
 }
 
 export default function Logs() {
@@ -21,7 +34,20 @@ export default function Logs() {
   const [logs, setLogs] = useState<LogEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false)
+  const [filters, setFilters] = useState<LogFilters>({
+    medicineId: '',
+    status: 'all',
+    dateFrom: '',
+    dateTo: '',
+    sortBy: 'date',
+    sortOrder: 'desc'
+  })
+  const [medicineNames, setMedicineNames] = useState<Record<string, string>>({})
   const { toast } = useToast()
+  const navigate = useNavigate()
   
   useEffect(() => {
     const handleResize = () => {
@@ -32,49 +58,106 @@ export default function Logs() {
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
+  // Fetch medicine names for filter display
   useEffect(() => {
-    fetchLogs()
+    const fetchMedicines = async () => {
+      try {
+        const medicines = await apiService.get<Array<{ _id: string, name: string }>>('/api/medicines')
+        if (Array.isArray(medicines)) {
+          const namesMap: Record<string, string> = {}
+          medicines.forEach(med => {
+            namesMap[med._id] = med.name
+          })
+          setMedicineNames(namesMap)
+        }
+      } catch (error) {
+        console.error('Error fetching medicine names:', error)
+      }
+    }
+    
+    fetchMedicines()
   }, [])
 
-  const fetchLogs = async () => {
+  const buildApiUrl = useCallback((page = 1, currentFilters = filters) => {
+    let url = `/api/reminders/log?limit=10&page=${page}`
+    
+    if (currentFilters.medicineId) {
+      url += `&medicineId=${currentFilters.medicineId}`
+    }
+    
+    if (currentFilters.status && currentFilters.status !== 'all') {
+      url += `&status=${currentFilters.status}`
+    }
+    
+    if (currentFilters.dateFrom) {
+      url += `&dateFrom=${currentFilters.dateFrom}`
+    }
+    
+    if (currentFilters.dateTo) {
+      url += `&dateTo=${currentFilters.dateTo}`
+    }
+    
+    if (currentFilters.sortBy) {
+      url += `&sortBy=${currentFilters.sortBy}`
+    }
+    
+    if (currentFilters.sortOrder) {
+      url += `&sortOrder=${currentFilters.sortOrder}`
+    }
+    
+    return url
+  }, [filters])
+
+  const fetchLogs = useCallback(async (page = 1, newFilters?: LogFilters, append = false) => {
     try {
-      setLoading(true)
-      // Simulate API call with delay
-      // In production, replace with actual API call: const data = await apiService.get("/api/logs")
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      if (!append) {
+        setLoading(true)
+      } else {
+        setLoadingMore(true)
+      }
       
-      // Mock data for medication logs
-      const mockLogs: LogEntry[] = [
-        { id: 1, medicine: "Aspirin", status: "taken", time: "Today, 08:15 AM", notes: "" },
-        { id: 2, medicine: "Vitamin D", status: "taken", time: "Today, 07:30 AM", notes: "" },
-        { id: 3, medicine: "Amoxicillin", status: "taken", time: "Yesterday, 09:00 PM", notes: "" },
-        { id: 4, medicine: "Amoxicillin", status: "taken", time: "Yesterday, 01:00 PM", notes: "" },
-        { id: 5, medicine: "Amoxicillin", status: "taken", time: "Yesterday, 05:00 AM", notes: "" },
-        { id: 6, medicine: "Aspirin", status: "missed", time: "2 days ago, 08:00 AM", notes: "Forgot" },
-      ]
+      const filtersToUse = newFilters || filters
+      const url = buildApiUrl(page, filtersToUse)
+      const response = await apiService.get<LogResponse>(url)
       
-      setLogs(mockLogs)
+      if (page === 1 || !append) {
+        setLogs(response.logs || [])
+      } else {
+        setLogs(prevLogs => [...prevLogs, ...(response.logs || [])])
+      }
+      
+      setCurrentPage(response.currentPage || page)
+      setTotalPages(response.totalPages || 1)
     } catch (error) {
       toast("Failed to load logs", "error")
       console.error("Error fetching logs:", error)
+      
+      // If API fails, provide fallback data
+      if (page === 1 || !append) {
+        const fallbackLogs: LogEntry[] = [
+          { id: 1, medicineName: "Aspirin", medicineId: "1", status: "taken", time: "2023-07-01 08:30 AM", notes: "Taken with breakfast" },
+          { id: 2, medicineName: "Vitamin D", medicineId: "2", status: "missed", time: "2023-07-01 09:00 AM", notes: "Forgot" },
+          { id: 3, medicineName: "Amoxicillin", medicineId: "3", status: "skipped", time: "2023-06-30 08:00 PM", notes: "Felt nauseous" }
+        ]
+        setLogs(fallbackLogs)
+      }
     } finally {
       setLoading(false)
+      setLoadingMore(false)
     }
-  }
+  }, [buildApiUrl, filters, toast])
+
+  useEffect(() => {
+    fetchLogs(1)
+  }, [fetchLogs])
 
   const loadMore = async () => {
+    if (currentPage >= totalPages) return
+    
     try {
       setLoadingMore(true)
-      // Simulate API call with delay
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // Add more mock data
-      const moreLogs: LogEntry[] = [
-        { id: 7, medicine: "Vitamin C", status: "taken", time: "3 days ago, 08:00 AM", notes: "" },
-        { id: 8, medicine: "Aspirin", status: "skipped", time: "3 days ago, 08:00 PM", notes: "Felt better" }
-      ]
-      
-      setLogs(prevLogs => [...prevLogs, ...moreLogs])
+      const nextPage = currentPage + 1
+      await fetchLogs(nextPage, undefined, true)
     } catch (error) {
       toast("Failed to load more logs", "error")
     } finally {
@@ -82,117 +165,260 @@ export default function Logs() {
     }
   }
   
+  const handleExport = async () => {
+    try {
+      // Build export URL with current filters
+      let exportUrl = '/api/reminders/log/export'
+      const queryParams = []
+      
+      if (filters.medicineId) {
+        queryParams.push(`medicineId=${filters.medicineId}`)
+      }
+      
+      if (filters.status && filters.status !== 'all') {
+        queryParams.push(`status=${filters.status}`)
+      }
+      
+      if (filters.dateFrom) {
+        queryParams.push(`dateFrom=${filters.dateFrom}`)
+      }
+      
+      if (filters.dateTo) {
+        queryParams.push(`dateTo=${filters.dateTo}`)
+      }
+      
+      if (queryParams.length > 0) {
+        exportUrl += `?${queryParams.join('&')}`
+      }
+      
+      // Using the raw axios instance for direct blob response
+      const response = await api.get(exportUrl, {
+        responseType: 'blob'
+      })
+      
+      // Create a blob URL and trigger download
+      const url = window.URL.createObjectURL(new Blob([response.data]))
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', `medication-logs-${new Date().toISOString().split('T')[0]}.csv`)
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      
+      toast("Export successful", "success")
+    } catch (error) {
+      toast("Failed to export logs", "error")
+      console.error("Export error:", error)
+    }
+  }
+  
+  const openFilterModal = () => {
+    setIsFilterModalOpen(true)
+  }
+  
+  const closeFilterModal = () => {
+    setIsFilterModalOpen(false)
+  }
+  
+  const applyFilters = (newFilters: LogFilters) => {
+    setFilters(newFilters)
+    setCurrentPage(1) // Reset to first page when filters change
+    fetchLogs(1, newFilters, false)
+  }
+  
+  const clearFilter = (key: keyof LogFilters) => {
+    const newFilters = { ...filters }
+    
+    if (key === 'status') {
+      newFilters[key] = 'all'
+    } else if (key === 'sortBy') {
+      newFilters[key] = 'date'
+    } else if (key === 'sortOrder') {
+      newFilters[key] = 'desc'
+    } else {
+      newFilters[key] = ''
+    }
+    
+    setFilters(newFilters)
+    setCurrentPage(1)
+    fetchLogs(1, newFilters, false)
+  }
+  
+  const clearAllFilters = () => {
+    const resetFilters: LogFilters = {
+      medicineId: '',
+      status: 'all',
+      dateFrom: '',
+      dateTo: '',
+      sortBy: 'date',
+      sortOrder: 'desc'
+    }
+    
+    setFilters(resetFilters)
+    setCurrentPage(1)
+    fetchLogs(1, resetFilters, false)
+  }
+  
+  const viewLogDetails = (id: number) => {
+    navigate(`/logs/${id}`)
+  }
+  
   // Helper to get status badge styles
   const getStatusBadge = (status: string) => {
     const statusClasses = {
-      taken: "bg-green-100 text-green-800",
-      missed: "bg-red-100 text-red-800",
-      skipped: "bg-yellow-100 text-yellow-800"
+      taken: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+      missed: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+      skipped: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
     };
     
-    return statusClasses[status as keyof typeof statusClasses] || "bg-gray-100 text-gray-800";
+    return statusClasses[status as keyof typeof statusClasses] || "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300";
   };
 
   return (
-    <div className="container mx-auto px-4 py-6 sm:px-6 md:px-8 max-w-4xl">
-      <div className="flex flex-col sm:flex-row sm:items-center mb-4 sm:mb-6 gap-2 sm:gap-4">
-        <Link to="/dashboard" className="text-blue-600 hover:underline">
-          &larr; Back to Dashboard
-        </Link>
-        <h1 className="text-xl sm:text-2xl font-bold">Medication Logs</h1>
-      </div>
-
-      <Card>
-        <CardHeader className="bg-gray-50 px-4 py-3 border-b">
-          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 sm:gap-0">
-            <CardTitle className="text-base font-medium">Recent Activity</CardTitle>
-            <div className="flex gap-2 sm:gap-3">
-              <Button size="sm" variant="outline">Filter</Button>
-              <Button size="sm" variant="outline">Export</Button>
-            </div>
+    <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <div className="bg-white dark:bg-gray-800 backdrop-blur-sm rounded-2xl shadow-2xl p-6 mx-auto border dark:border-gray-700">
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-3">
+          <div className="flex items-center gap-2">
+            <Link to="/dashboard" className="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors">
+              &larr; Back to Dashboard
+            </Link>
+            <h1 className="text-2xl font-semibold ml-2 dark:text-gray-100">Medication Logs</h1>
           </div>
-        </CardHeader>
+          <div className="flex gap-3">
+            <Button 
+              size="sm" 
+              className="rounded-full bg-white text-indigo-600 border border-indigo-200 hover:bg-indigo-50 dark:bg-gray-700 dark:text-indigo-400 dark:border-gray-600 dark:hover:bg-gray-600"
+              onClick={openFilterModal}
+            >
+              <Filter size={16} className="mr-1" /> Filter
+            </Button>
+            <Button 
+              size="sm" 
+              className="rounded-full bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-700"
+              onClick={handleExport}
+            >
+              <Download size={16} className="mr-1" /> Export
+            </Button>
+          </div>
+        </div>
         
-        {loading ? (
-          isMobile ? (
-            <CardContent className="p-4">
-              <CardSkeleton count={4} />
-            </CardContent>
+        <ActiveFilters 
+          filters={filters}
+          onClearFilter={clearFilter}
+          onClearAll={clearAllFilters}
+          medicineNames={medicineNames}
+        />
+        
+        <div className="overflow-x-auto">
+          {loading ? (
+            isMobile ? (
+              <div className="p-4">
+                <CardSkeleton count={4} />
+              </div>
+            ) : (
+              <TableSkeleton columns={5} rows={4} />
+            )
+          ) : logs.length === 0 ? (
+            <div className="py-8 text-center">
+              <p className="text-gray-500 dark:text-gray-400">No medication logs found.</p>
+              {Object.values(filters).some(v => v !== '' && v !== 'all') && (
+                <p className="text-gray-500 dark:text-gray-400 mt-2">
+                  Try adjusting your filters to see more results.
+                </p>
+              )}
+            </div>
+          ) : isMobile ? (
+            // Mobile view using cards
+            <div className="p-0 divide-y dark:divide-gray-700">
+              {logs.map((log) => (
+                <div 
+                  key={log.id} 
+                  className="px-4 py-3 flex flex-col gap-2"
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="font-medium flex flex-wrap items-center gap-2 dark:text-gray-100">
+                        {log.medicineName}
+                        <span className={`text-xs px-2 py-1 rounded-full ${getStatusBadge(log.status)}`}>
+                          {log.status}
+                        </span>
+                      </div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">{log.time}</div>
+                      {log.notes && <div className="text-sm text-gray-500 dark:text-gray-500 mt-1">Note: {log.notes}</div>}
+                    </div>
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      className="self-start dark:text-gray-300 dark:hover:bg-gray-700"
+                      onClick={() => viewLogDetails(log.id)}
+                    >
+                      Details
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : (
-            <TableSkeleton columns={5} rows={4} />
-          )
-        ) : logs.length === 0 ? (
-          <CardContent className="py-8 text-center">
-            <p className="text-gray-500">No medication logs found.</p>
-          </CardContent>
-        ) : isMobile ? (
-          // Mobile view using cards
-          <CardContent className="p-0 divide-y">
-            {logs.map((log) => (
-              <div 
-                key={log.id} 
-                className="px-4 py-3 flex flex-col gap-2"
-              >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <div className="font-medium flex flex-wrap items-center gap-2">
-                      {log.medicine}
-                      <span className={`text-xs px-2 py-1 rounded-full ${getStatusBadge(log.status)}`}>
+            // Desktop view using table
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Medication</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Time</TableHead>
+                  <TableHead>Notes</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {logs.map((log) => (
+                  <TableRow key={log.id}>
+                    <TableCell className="font-medium dark:text-gray-200">{log.medicineName}</TableCell>
+                    <TableCell>
+                      <span className={`inline-block px-2 py-1 text-xs rounded-full ${getStatusBadge(log.status)}`}>
                         {log.status}
                       </span>
-                    </div>
-                    <div className="text-sm text-gray-600">{log.time}</div>
-                    {log.notes && <div className="text-sm text-gray-500 mt-1">Note: {log.notes}</div>}
-                  </div>
-                  <Button size="sm" variant="ghost" className="self-start">Details</Button>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        ) : (
-          // Desktop view using table
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Medication</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Time</TableHead>
-                <TableHead>Notes</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {logs.map((log) => (
-                <TableRow key={log.id}>
-                  <TableCell className="font-medium">{log.medicine}</TableCell>
-                  <TableCell>
-                    <span className={`inline-block px-2 py-1 text-xs rounded-full ${getStatusBadge(log.status)}`}>
-                      {log.status}
-                    </span>
-                  </TableCell>
-                  <TableCell>{log.time}</TableCell>
-                  <TableCell>{log.notes || "-"}</TableCell>
-                  <TableCell className="text-right">
-                    <Button size="sm" variant="ghost">Details</Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-        
-        <div className="bg-gray-50 px-4 py-3 border-t flex justify-center">
-          <LoadingButton 
-            variant="outline" 
-            size="sm" 
-            isLoading={loadingMore}
-            loadingText="Loading..."
-            onClick={loadMore}
-          >
-            Load More
-          </LoadingButton>
+                    </TableCell>
+                    <TableCell className="dark:text-gray-300">{log.time}</TableCell>
+                    <TableCell className="dark:text-gray-400">{log.notes || "-"}</TableCell>
+                    <TableCell className="text-right">
+                      <Button 
+                        size="sm" 
+                        variant="ghost"
+                        onClick={() => viewLogDetails(log.id)}
+                        className="dark:text-gray-300 dark:hover:bg-gray-700"
+                      >
+                        Details
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+          
+          <div className="bg-gray-50 dark:bg-gray-800/50 px-4 py-3 border-t dark:border-gray-700 flex justify-center rounded-b-xl">
+            <LoadingButton 
+              variant="outline" 
+              size="sm" 
+              isLoading={loadingMore}
+              loadingText="Loading..."
+              onClick={loadMore}
+              className="rounded-full dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+              disabled={currentPage >= totalPages}
+            >
+              {currentPage >= totalPages ? "No More Logs" : "Load More"}
+            </LoadingButton>
+          </div>
         </div>
-      </Card>
+      </div>
+      
+      <LogFilterModal
+        isOpen={isFilterModalOpen}
+        onClose={closeFilterModal}
+        onApplyFilters={applyFilters}
+        currentFilters={filters}
+      />
     </div>
   )
 } 
