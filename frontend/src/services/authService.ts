@@ -26,7 +26,7 @@ const USER_KEY = 'user';
 const authService = {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     try {
-      const data = await apiService.post<AuthResponse>('/api/auth/login', credentials);
+      const data = await apiService.post<AuthResponse>('/auth/login', credentials);
       if (data.token) {
         localStorage.setItem(TOKEN_KEY, data.token);
         localStorage.setItem(USER_KEY, JSON.stringify(data.user));
@@ -40,7 +40,7 @@ const authService = {
 
   async register(credentials: RegisterCredentials): Promise<AuthResponse> {
     try {
-      const data = await apiService.post<AuthResponse>('/api/auth/register', credentials);
+      const data = await apiService.post<AuthResponse>('/auth/register', credentials);
       if (data.token) {
         localStorage.setItem(TOKEN_KEY, data.token);
         localStorage.setItem(USER_KEY, JSON.stringify(data.user));
@@ -54,7 +54,7 @@ const authService = {
 
   async forgotPassword(email: string): Promise<any> {
     try {
-      return await apiService.post('/api/auth/forgot-password', { email });
+      return await apiService.post('/auth/forgot-password', { email });
     } catch (error) {
       console.error('Forgot password error:', error);
       throw error;
@@ -63,7 +63,7 @@ const authService = {
 
   async verifyResetToken(token: string): Promise<boolean> {
     try {
-      await apiService.post('/api/auth/verify-reset-token', { token });
+      await apiService.post('/auth/verify-reset-token', { token });
       return true;
     } catch (error) {
       console.error('Token verification error:', error);
@@ -73,7 +73,7 @@ const authService = {
 
   async resetPassword(token: string, password: string): Promise<any> {
     try {
-      return await apiService.post('/api/auth/reset-password', { token, password });
+      return await apiService.post('/auth/reset-password', { token, password });
     } catch (error) {
       console.error('Reset password error:', error);
       throw error;
@@ -109,7 +109,7 @@ const authService = {
 
   async updateProfile(userId: string, userData: Partial<User>): Promise<User> {
     try {
-      const updatedUser = await apiService.put<User>(`/api/users/${userId}`, userData);
+      const updatedUser = await apiService.put<User>(`/users/${userId}`, userData);
       
       // Update stored user data
       const currentUser = this.getCurrentUser();
