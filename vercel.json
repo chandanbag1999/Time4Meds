@@ -4,5 +4,13 @@
       "source": "/(.*)",
       "destination": "/index.html"
     }
-  ]
+  ],
+  "buildCommand": "npm install --legacy-peer-deps --ignore-platform && npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install --legacy-peer-deps --ignore-platform",
+  "git": {
+    "deploymentEnabled": {
+      "main": true
+    }
+  }
 } 
