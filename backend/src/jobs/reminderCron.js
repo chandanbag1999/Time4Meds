@@ -5,6 +5,8 @@ import ReminderLog from '../models/reminderLog.model.js';
 import nodemailer from 'nodemailer';
 // Imports for Firebase Cloud Messaging (commented out until implementation)
 // import admin from 'firebase-admin';
+// Import mongoose at the top level
+import mongoose from 'mongoose';
 
 /**
  * Configure nodemailer transporter for future use
@@ -102,7 +104,24 @@ const simulatePushNotification = (userId, medicineName, reminderTime) => {
  * Check if the application is using mock database
  */
 const isUsingMockDatabase = () => {
-  return !!global.mockDB;
+  // Check if global.mockDB exists or if mongoose connection is not ready
+  try {
+    // If global.mockDB exists, we're in mock mode
+    if (global.mockDB) {
+      return true;
+    }
+    
+    // If mongoose is not connected, treat as mock mode
+    if (!mongoose.connection || mongoose.connection.readyState !== 1) {
+      console.log('[MOCK MODE] MongoDB not connected, using mock data');
+      return true;
+    }
+    
+    return false;
+  } catch (err) {
+    console.log('[MOCK MODE] Error checking database state, defaulting to mock mode:', err.message);
+    return true;
+  }
 };
 
 /**
