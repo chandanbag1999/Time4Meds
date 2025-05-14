@@ -1,6 +1,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import axios from 'axios';
 import connectDB from './db/dbConfig.js';
 import medicineRoutes from './routes/medicine.routes.js';
 import authRoutes from './routes/auth.routes.js';
@@ -62,6 +63,11 @@ apiRouter.use('/reminders', remindersRoutes);
 apiRouter.use('/test', testRoutes);
 app.use('/api', apiRouter);
 
+// Keep-alive route to prevent Render free tier from sleeping
+app.get('/ping', (req, res) => {
+  res.status(200).send('pong');
+});
+
 // Error handling
 app.use(notFound);
 app.use(errorHandler);
@@ -110,6 +116,28 @@ connectDB()
       console.error(err);
       server.close(() => process.exit(1));
     });
+
+    // Keep-alive mechanism to prevent Render from putting the service to sleep
+    const PING_INTERVAL = 14 * 60 * 1000; // 14 minutes in milliseconds
+    const APP_URL = process.env.APP_URL || 'https://time4meds.onrender.com';
+    
+    // Only run the keep-alive in production environment
+    if (process.env.NODE_ENV === 'production') {
+      setInterval(() => {
+        try {
+          console.log(`[${new Date().toISOString()}] Pinging server to keep it alive...`);
+          axios.get(`${APP_URL}/ping`)
+            .then(response => {
+              console.log(`[${new Date().toISOString()}] Keep-alive ping successful: ${response.status}`);
+            })
+            .catch(error => {
+              console.error(`[${new Date().toISOString()}] Keep-alive ping failed:`, error.message);
+            });
+        } catch (error) {
+          console.error(`[${new Date().toISOString()}] Error in keep-alive mechanism:`, error);
+        }
+      }, PING_INTERVAL);
+    }
   })
   .catch(err => console.error('Server failed to start:', err));
 
