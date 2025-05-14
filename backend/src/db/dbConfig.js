@@ -3,14 +3,20 @@ import mongoose from 'mongoose';
 // Connect to MongoDB
 const connectDB = async () => {
   try {
-    // Use environment variable for MongoDB connection or fallback to localhost for development
     // Check for both MONGODB_URI and MONGO_URI
-    const mongoURI = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/time4meds';
+    const mongoURIEnv = process.env.MONGODB_URI || process.env.MONGO_URI;
     
-    console.log('Attempting to connect to MongoDB with URI:', 
-      mongoURI.startsWith('mongodb+srv://') ? 
-      `mongodb+srv://****:****@${mongoURI.split('@')[1]}` : 
-      mongoURI);
+    // If no URI is provided, use localhost as fallback
+    const mongoURI = mongoURIEnv || 'mongodb://localhost:27017/time4meds';
+    
+    // Log connection attempt (with credentials masked)
+    console.log('Attempting to connect to MongoDB...');
+    if (mongoURIEnv) {
+      // Simple check if the URI is formatted properly
+      if (mongoURIEnv.includes('@cc@')) {
+        console.log('Warning: Your MongoDB URI appears to have formatting issues. The @ character in passwords needs to be URL encoded as %40');
+      }
+    }
     
     // Set mongoose options
     const options = {
