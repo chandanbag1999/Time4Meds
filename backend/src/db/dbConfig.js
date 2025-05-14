@@ -11,10 +11,32 @@ const connectDB = async () => {
     
     // Log connection attempt (with credentials masked)
     console.log('Attempting to connect to MongoDB...');
+    
+    // Fix common connection string issues
+    let fixedMongoURI = mongoURI;
+    
+    // Check for common connection string issues
     if (mongoURIEnv) {
-      // Simple check if the URI is formatted properly
       if (mongoURIEnv.includes('@cc@')) {
-        console.log('Warning: Your MongoDB URI appears to have formatting issues. The @ character in passwords needs to be URL encoded as %40');
+        console.log('Warning: Your MongoDB URI has an unencoded @ character in the password. Attempting to fix...');
+        
+        // Try to fix the connection string by properly encoding the @ in the password
+        const parts = mongoURIEnv.split('@');
+        if (parts.length === 3) {
+          // Format is likely username:password@cc@hostname
+          const userPassPart = parts[0]; // username:password
+          const hostPart = parts[2]; // hostname
+          
+          // Split username and password
+          const userPassSplit = userPassPart.split(':');
+          if (userPassSplit.length === 2) {
+            const username = userPassSplit[0];
+            const password = userPassSplit[1] + '%40cc'; // Encode @ as %40
+            
+            fixedMongoURI = `${username}:${password}@${hostPart}`;
+            console.log('Fixed connection string. Using properly encoded password.');
+          }
+        }
       }
     }
     
@@ -27,11 +49,26 @@ const connectDB = async () => {
     };
     
     try {
-      await mongoose.connect(mongoURI, options);
+      // Try to connect with the fixed URI
+      await mongoose.connect(fixedMongoURI, options);
       console.log(`MongoDB Connected: ${mongoose.connection.host}`);
       return mongoose.connection;
     } catch (err) {
       console.log('MongoDB Connection Error:', err.message);
+      
+      // If the error is EBADNAME, try with standard connection string format instead of SRV
+      if (err.code === 'EBADNAME' && fixedMongoURI.startsWith('mongodb+srv://')) {
+        console.log('Trying with standard connection string format...');
+        try {
+          // Convert mongodb+srv:// to mongodb:// and add default port
+          const standardURI = fixedMongoURI.replace('mongodb+srv://', 'mongodb://') + ':27017';
+          await mongoose.connect(standardURI, options);
+          console.log(`MongoDB Connected with standard URI: ${mongoose.connection.host}`);
+          return mongoose.connection;
+        } catch (standardErr) {
+          console.log('Standard connection format also failed:', standardErr.message);
+        }
+      }
       
       // If connection fails, create a mock implementation that allows the server to start
       // This is for demo purposes only
