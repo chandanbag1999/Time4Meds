@@ -1,11 +1,10 @@
 import mongoose from 'mongoose';
 
-// In-memory MongoDB server for testing
+// Connect to MongoDB
 const connectDB = async () => {
   try {
-    // Use a hardcoded 'mongodb://localhost:27017/time4meds' connection string for testing
-    // since we're having issues with the MongoDB connection
-    const mongoURI = 'mongodb://localhost:27017/time4meds';
+    // Use environment variable for MongoDB connection or fallback to localhost for development
+    const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/time4meds';
     
     // Set mongoose options
     const options = {
