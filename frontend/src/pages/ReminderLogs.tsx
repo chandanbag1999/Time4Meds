@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react"
 import type { ChangeEvent } from "react"
 import { Button } from "@/components/ui/button"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import apiService from "../services/api"
 import { useToast } from "@/contexts/ToastContext"
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card"
@@ -46,6 +46,7 @@ const ReminderLogs = () => {
   const [totalPages, setTotalPages] = useState(1)
   const { toast } = useToast()
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleResize = () => {
@@ -311,7 +312,15 @@ const ReminderLogs = () => {
                           </div>
                         )}
                       </div>
-                      <Button variant="outline" size="sm" className="rounded-full" aria-label={`View details for ${log.medicineName}`}>Details</Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="rounded-full" 
+                        aria-label={`View details for ${log.medicineName}`}
+                        onClick={() => navigate(`/logs/${log.id}`)}
+                      >
+                        Details
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -338,7 +347,15 @@ const ReminderLogs = () => {
                       <TableCell>{getStatusBadge(log.status)}</TableCell>
                       <TableCell>{log.notes || "-"}</TableCell>
                       <TableCell className="text-right">
-                        <Button variant="outline" size="sm" className="rounded-full" aria-label={`View details for ${log.medicineName}`}>Details</Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="rounded-full" 
+                          aria-label={`View details for ${log.medicineName}`}
+                          onClick={() => navigate(`/logs/${log.id}`)}
+                        >
+                          Details
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}

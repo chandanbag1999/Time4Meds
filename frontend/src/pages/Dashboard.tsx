@@ -33,6 +33,19 @@ interface ReminderLog {
   time?: string
 }
 
+// New interface for activity logs
+interface ActivityLog {
+  _id: string
+  medicineId: {
+    _id: string
+    name: string
+    dosage: string
+  }
+  status: 'pending' | 'taken' | 'missed' | 'skipped'
+  timestamp: string
+  time: string
+}
+
 // Sample medication data for development/fallback
 const SAMPLE_MEDICINES: Medicine[] = [
   { _id: "1", name: "Aspirin", dosage: "100mg", frequency: "Once daily", time: "08:00 AM", isActive: true, createdAt: new Date().toISOString() },
@@ -84,6 +97,8 @@ export default function Dashboard() {
   const [todayReminders, setTodayReminders] = useState<ReminderLog[]>([])
   const [loading, setLoading] = useState(true)
   const [remindersLoading, setRemindersLoading] = useState(true)
+  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([])
+  const [activityLogsLoading, setActivityLogsLoading] = useState(true)
   const [userName, setUserName] = useState("")
   const [usingSampleData, setUsingSampleData] = useState(false)
   const [actionsLoading, setActionsLoading] = useState<Record<string, boolean>>({})
@@ -194,39 +209,151 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchTodayReminders = async () => {
       try {
-        setRemindersLoading(true)
+        setRemindersLoading(true);
         
         // Format today's date in YYYY-MM-DD format for the API
-        const today = new Date()
-        const formattedDate = format(today, 'yyyy-MM-dd')
+        const today = new Date();
+        const formattedDate = format(today, 'yyyy-MM-dd');
         
         // Get reminders for today only
-        const data = await apiService.get<ReminderLog[]>(`/reminders/log?date=${formattedDate}`)
-        // Ensure data is an array
-        setTodayReminders(Array.isArray(data) ? data : [])
+        const response = await apiService.get<any>(`/reminders/log?date=${formattedDate}`);
+        
+        // Check response structure and extract logs
+        let reminderLogs: ReminderLog[] = [];
+        
+        if (response && typeof response === 'object') {
+          // Handle different API response structures
+          if (response.success && response.data) {
+            // Standard API response format
+            if (response.data.logs && Array.isArray(response.data.logs)) {
+              reminderLogs = response.data.logs.map((log: any) => ({
+                id: log._id || log.id,
+                medicineId: log.medicineId?._id || log.medicineId,
+                medicineName: log.medicineId?.name || "Unknown Medicine",
+                status: log.status || "pending",
+                date: log.timestamp || log.date,
+                time: log.time
+              }));
+            }
+          } else if (Array.isArray(response)) {
+            // Direct array response
+            reminderLogs = response.map((log: any) => ({
+              id: log._id || log.id,
+              medicineId: log.medicineId?._id || log.medicineId,
+              medicineName: log.medicineId?.name || "Unknown Medicine",
+              status: log.status || "pending",
+              date: log.timestamp || log.date,
+              time: log.time
+            }));
+          } else if (response.data) {
+            // API response with data field
+            if (Array.isArray(response.data)) {
+              reminderLogs = response.data.map((log: any) => ({
+                id: log._id || log.id,
+                medicineId: log.medicineId?._id || log.medicineId,
+                medicineName: log.medicineId?.name || "Unknown Medicine",
+                status: log.status || "pending",
+                date: log.timestamp || log.date,
+                time: log.time
+              }));
+            } else if (response.data.logs && Array.isArray(response.data.logs)) {
+              reminderLogs = response.data.logs.map((log: any) => ({
+                id: log._id || log.id,
+                medicineId: log.medicineId?._id || log.medicineId,
+                medicineName: log.medicineId?.name || "Unknown Medicine",
+                status: log.status || "pending",
+                date: log.timestamp || log.date,
+                time: log.time
+              }));
+            }
+          }
+        }
+        
+        console.log("Today's reminders:", reminderLogs);
+        setTodayReminders(reminderLogs);
       } catch (err) {
-        console.error("Error fetching today's reminders:", err)
+        console.error("Error fetching today's reminders:", err);
         // Use sample data if API fails
         if (usingSampleData) {
-          setTodayReminders(generateSampleReminders())
+          setTodayReminders(generateSampleReminders());
         } else {
           // Ensure todayReminders is always an array
-          setTodayReminders([])
+          setTodayReminders([]);
         }
       } finally {
-        setRemindersLoading(false)
+        setRemindersLoading(false);
       }
-    }
+    };
 
-    fetchTodayReminders()
+    fetchTodayReminders();
     
     // Set up periodic refresh (every 5 minutes)
     const intervalId = setInterval(() => {
-      fetchTodayReminders()
-    }, 5 * 60 * 1000)
+      fetchTodayReminders();
+    }, 5 * 60 * 1000);
     
-    return () => clearInterval(intervalId)
-  }, [usingSampleData])
+    return () => clearInterval(intervalId);
+  }, [usingSampleData]);
+
+  // Fetch recent activity logs
+  useEffect(() => {
+    const fetchRecentActivityLogs = async () => {
+      try {
+        setActivityLogsLoading(true);
+        
+        // Limit to 5 most recent logs
+        const response = await apiService.get<any>('/reminder-logs?limit=5');
+        
+        let logs: ActivityLog[] = [];
+        
+        if (response && typeof response === 'object') {
+          if (response.success && response.data && response.data.logs) {
+            logs = response.data.logs;
+          } else if (Array.isArray(response)) {
+            logs = response;
+          } else if (response.data && Array.isArray(response.data)) {
+            logs = response.data;
+          } else if (response.data && response.data.logs && Array.isArray(response.data.logs)) {
+            logs = response.data.logs;
+          }
+        }
+        
+        console.log("Recent activity logs:", logs);
+        setActivityLogs(logs);
+      } catch (err) {
+        console.error("Error fetching recent activity logs:", err);
+        // Use sample data if API fails
+        if (usingSampleData) {
+          // Mock activity logs if API fails
+          const sampleActivityLogs = generateSampleReminders().map(log => ({
+            _id: log.id,
+            medicineId: {
+              _id: log.medicineId,
+              name: log.medicineName,
+              dosage: "100mg"
+            },
+            status: log.status,
+            timestamp: log.date,
+            time: log.time || ""
+          }));
+          setActivityLogs(sampleActivityLogs);
+        } else {
+          setActivityLogs([]);
+        }
+      } finally {
+        setActivityLogsLoading(false);
+      }
+    };
+
+    fetchRecentActivityLogs();
+    
+    // Set up periodic refresh (every 5 minutes)
+    const intervalId = setInterval(() => {
+      fetchRecentActivityLogs();
+    }, 5 * 60 * 1000);
+    
+    return () => clearInterval(intervalId);
+  }, [usingSampleData]);
 
   const handleDelete = async (id: string) => {
     if (window.confirm("Are you sure you want to delete this medicine?")) {
@@ -246,40 +373,95 @@ export default function Dashboard() {
   // Log medicine status (taken or skipped)
   const logMedicineStatus = async (medicineId: string, medicineName: string, status: 'taken' | 'skipped') => {
     // Mark this specific medicine as loading
-    setActionsLoading(prev => ({ ...prev, [medicineId]: true }))
+    setActionsLoading(prev => ({ ...prev, [medicineId]: true }));
     
     try {
-      const currentTime = new Date().toISOString()
+      const currentTime = new Date().toISOString();
       const logData = {
         medicineId,
         status,
         date: currentTime,
         time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
-      }
+      };
       
       if (!usingSampleData) {
-        await apiService.post('/reminders/log', logData)
+        await apiService.post('/reminders/log', logData);
+        
+        // Refresh the reminders list after logging
+        const today = new Date();
+        const formattedDate = format(today, 'yyyy-MM-dd');
+        const response = await apiService.get<any>(`/reminders/log?date=${formattedDate}`);
+        
+        // Process the updated reminders to ensure they're in the correct format
+        let updatedReminders: ReminderLog[] = [];
+        
+        if (response && typeof response === 'object') {
+          // Handle different API response structures
+          if (response.success && response.data) {
+            if (response.data.logs && Array.isArray(response.data.logs)) {
+              updatedReminders = response.data.logs.map((log: any) => ({
+                id: log._id || log.id,
+                medicineId: log.medicineId?._id || log.medicineId,
+                medicineName: log.medicineId?.name || "Unknown Medicine",
+                status: log.status || "pending",
+                date: log.timestamp || log.date,
+                time: log.time
+              }));
+            }
+          } else if (Array.isArray(response)) {
+            updatedReminders = response.map((log: any) => ({
+              id: log._id || log.id,
+              medicineId: log.medicineId?._id || log.medicineId,
+              medicineName: log.medicineId?.name || "Unknown Medicine",
+              status: log.status || "pending",
+              date: log.timestamp || log.date,
+              time: log.time
+            }));
+          } else if (response.data) {
+            if (Array.isArray(response.data)) {
+              updatedReminders = response.data.map((log: any) => ({
+                id: log._id || log.id,
+                medicineId: log.medicineId?._id || log.medicineId,
+                medicineName: log.medicineId?.name || "Unknown Medicine",
+                status: log.status || "pending",
+                date: log.timestamp || log.date,
+                time: log.time
+              }));
+            } else if (response.data.logs && Array.isArray(response.data.logs)) {
+              updatedReminders = response.data.logs.map((log: any) => ({
+                id: log._id || log.id,
+                medicineId: log.medicineId?._id || log.medicineId,
+                medicineName: log.medicineId?.name || "Unknown Medicine",
+                status: log.status || "pending",
+                date: log.timestamp || log.date,
+                time: log.time
+              }));
+            }
+          }
+          
+          setTodayReminders(updatedReminders);
+        }
+      } else {
+        // Update local state for sample data
+        const updatedReminders = todayReminders.map(reminder => {
+          if (reminder.medicineId === medicineId && reminder.status === 'pending') {
+            return { ...reminder, status };
+          }
+          return reminder;
+        });
+        setTodayReminders(updatedReminders);
       }
       
-      // Update local state to show the change immediately
-      const updatedReminders = todayReminders.map(reminder => {
-        if (reminder.medicineId === medicineId && reminder.status === 'pending') {
-          return { ...reminder, status }
-        }
-        return reminder
-      })
-      setTodayReminders(updatedReminders)
-      
-      const statusText = status === 'taken' ? 'taken' : 'skipped'
-      toast(`${medicineName} marked as ${statusText}`, 'success')
+      const statusText = status === 'taken' ? 'taken' : 'skipped';
+      toast(`${medicineName} marked as ${statusText}`, 'success');
     } catch (err) {
-      console.error(`Error logging medicine as ${status}:`, err)
-      toast(`Failed to log medicine status`, 'error')
+      console.error(`Error logging medicine as ${status}:`, err);
+      toast(`Failed to log medicine status`, 'error');
     } finally {
       // Remove loading state for this medicine
-      setActionsLoading(prev => ({ ...prev, [medicineId]: false }))
+      setActionsLoading(prev => ({ ...prev, [medicineId]: false }));
     }
-  }
+  };
 
   // Format time for display
   const formatTime = (timeString: string): string => {
@@ -346,6 +528,22 @@ export default function Dashboard() {
 
   const navigateToLogs = () => {
     navigate("/logs")
+  }
+
+  // Function to format timestamp to human-readable date/time
+  const formatTimestamp = (timestamp: string): string => {
+    try {
+      const date = new Date(timestamp);
+      return date.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+    } catch (err) {
+      return timestamp;
+    }
   }
 
   return (
@@ -995,93 +1193,189 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Empty state with animation */}
+          {/* Activity Log content */}
           <motion.div 
             className="p-4 sm:p-6 md:p-8 mobile-animate-in"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.1 }}
           >
-            <div className="flex flex-col items-center justify-center py-8 sm:py-10 md:py-12 px-4 sm:px-6 text-center max-w-lg mx-auto">
-              <motion.div 
-                className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-gradient-to-br from-accent/10 to-primary/10 dark:from-accent/20 dark:to-primary/20 flex items-center justify-center mb-4 sm:mb-6 shadow-sm"
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.3, type: "spring", stiffness: 260, damping: 20 }}
-              >
-                <svg 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  width="20" 
-                  height="20" 
-                  viewBox="0 0 24 24" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  strokeWidth="1.5" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  className="text-accent dark:text-accent sm:w-8 sm:h-8"
+            {activityLogsLoading ? (
+              <div className="animate-pulse space-y-4">
+                <div className="h-14 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+                <div className="h-14 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+                <div className="h-14 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+              </div>
+            ) : activityLogs.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 sm:py-10 md:py-12 px-4 sm:px-6 text-center max-w-lg mx-auto">
+                <motion.div 
+                  className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-gradient-to-br from-accent/10 to-primary/10 dark:from-accent/20 dark:to-primary/20 flex items-center justify-center mb-4 sm:mb-6 shadow-sm"
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.3, type: "spring", stiffness: 260, damping: 20 }}
                 >
-                  <path d="M12 8v4l3 3"/>
-                  <circle cx="12" cy="12" r="10"/>
-                </svg>
-              </motion.div>
-              
-              <motion.h3 
-                className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-100 mb-2"
-                initial={{ y: 10, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.4, duration: 0.5 }}
-              >
-                Your activity timeline
-              </motion.h3>
-              <motion.p 
-                className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-1"
-                initial={{ y: 10, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.5, duration: 0.5 }}
-              >
-                Recent medication activities will appear here
-              </motion.p>
-              <motion.p 
-                className="text-xs sm:text-sm text-gray-500 dark:text-gray-500"
-                initial={{ y: 10, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.6, duration: 0.5 }}
-              >
-                Track your medication history and adherence over time
-              </motion.p>
-              
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    width="20" 
+                    height="20" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="1.5" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    className="text-accent dark:text-accent sm:w-8 sm:h-8"
+                  >
+                    <path d="M12 8v4l3 3"/>
+                    <circle cx="12" cy="12" r="10"/>
+                  </svg>
+                </motion.div>
+                
+                <motion.h3 
+                  className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-100 mb-2"
+                  initial={{ y: 10, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.4, duration: 0.5 }}
+                >
+                  Your activity timeline
+                </motion.h3>
+                <motion.p 
+                  className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-1"
+                  initial={{ y: 10, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.5, duration: 0.5 }}
+                >
+                  Recent medication activities will appear here
+                </motion.p>
+                <motion.p 
+                  className="text-xs sm:text-sm text-gray-500 dark:text-gray-500"
+                  initial={{ y: 10, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.6, duration: 0.5 }}
+                >
+                  Track your medication history and adherence over time
+                </motion.p>
+                
+                <motion.div 
+                  className="mt-6 sm:mt-8 w-full max-w-xs bg-white/50 dark:bg-gray-800/60 rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-dashed border-gray-200 dark:border-gray-700/50"
+                  initial={{ y: 15, opacity: 0 }}
+                  animate={{ y: 0, opacity: 0.5 }}
+                  transition={{ 
+                    delay: 0.7, 
+                    duration: 0.6,
+                    type: "spring",
+                    stiffness: 100,
+                    damping: 15
+                  }}
+                  whileHover={{ 
+                    y: -5, 
+                    opacity: 0.8,
+                    transition: { duration: 0.2 }
+                  }}
+                >
+                  <div className="flex items-center">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-accent/10 dark:bg-accent/20 flex items-center justify-center mr-2 sm:mr-3">
+                      <svg className="w-4 h-4 sm:w-5 sm:h-5 text-accent dark:text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <div className="h-1.5 sm:h-2 bg-gray-200 dark:bg-gray-700 rounded-full w-16 sm:w-24 mb-1.5 sm:mb-2"></div>
+                      <div className="h-1.5 sm:h-2 bg-gray-200 dark:bg-gray-700 rounded-full w-12 sm:w-16"></div>
+                    </div>
+                    <div className="text-xs text-gray-400 dark:text-gray-400">9:30 AM</div>
+                  </div>
+                </motion.div>
+              </div>
+            ) : (
               <motion.div 
-                className="mt-6 sm:mt-8 w-full max-w-xs bg-white/50 dark:bg-gray-800/60 rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-dashed border-gray-200 dark:border-gray-700/50"
-                initial={{ y: 15, opacity: 0 }}
-                animate={{ y: 0, opacity: 0.5 }}
-                transition={{ 
-                  delay: 0.7, 
-                  duration: 0.6,
-                  type: "spring",
-                  stiffness: 100,
-                  damping: 15
-                }}
-                whileHover={{ 
-                  y: -5, 
-                  opacity: 0.8,
-                  transition: { duration: 0.2 }
-                }}
+                className="space-y-3 sm:space-y-4"
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
               >
-                <div className="flex items-center">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-accent/10 dark:bg-accent/20 flex items-center justify-center mr-2 sm:mr-3">
-                    <svg className="w-4 h-4 sm:w-5 sm:h-5 text-accent dark:text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <div className="flex-1">
-                    <div className="h-1.5 sm:h-2 bg-gray-200 dark:bg-gray-700 rounded-full w-16 sm:w-24 mb-1.5 sm:mb-2"></div>
-                    <div className="h-1.5 sm:h-2 bg-gray-200 dark:bg-gray-700 rounded-full w-12 sm:w-16"></div>
-                  </div>
-                  <div className="text-xs text-gray-400 dark:text-gray-400">9:30 AM</div>
+                {activityLogs.map((log) => (
+                  <motion.div 
+                    key={log._id} 
+                    className="flex items-center p-3 sm:p-4 rounded-xl bg-white/50 dark:bg-gray-800/30 border border-gray-100 dark:border-gray-700/50 hover:shadow-md transition-all"
+                    variants={itemVariants}
+                    whileHover={{ y: -2, boxShadow: "0 4px 12px -2px rgba(0, 0, 0, 0.08)" }}
+                  >
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center mr-3 sm:mr-4 shadow-sm flex-shrink-0">
+                      {log.status === 'taken' ? (
+                        <div className="w-full h-full rounded-lg sm:rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                          <svg className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                      ) : log.status === 'missed' ? (
+                        <div className="w-full h-full rounded-lg sm:rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                          <svg className="w-4 h-4 sm:w-5 sm:h-5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </div>
+                      ) : log.status === 'skipped' ? (
+                        <div className="w-full h-full rounded-lg sm:rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                          <svg className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                          </svg>
+                        </div>
+                      ) : (
+                        <div className="w-full h-full rounded-lg sm:rounded-xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center">
+                          <svg className="w-4 h-4 sm:w-5 sm:h-5 text-primary dark:text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm sm:text-base font-medium text-gray-800 dark:text-gray-100 truncate">
+                        {log.medicineId?.name || "Unknown Medicine"}
+                      </p>
+                      <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                        {log.status.charAt(0).toUpperCase() + log.status.slice(1)} at {formatTime(log.time || "")}
+                      </p>
+                    </div>
+                    
+                    <div className="text-xs sm:text-sm text-gray-400 dark:text-gray-500 flex-shrink-0 ml-2">
+                      {formatTimestamp(log.timestamp)}
+                    </div>
+                  </motion.div>
+                ))}
+                
+                <div className="flex justify-center mt-4 sm:mt-6">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    asChild
+                    className="rounded-full text-xs sm:text-sm text-accent dark:text-accent hover:bg-accent/5 dark:hover:bg-accent/10 border border-accent/20"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      navigateToLogs();
+                    }}
+                  >
+                    <Link to="/logs" className="flex items-center px-3 sm:px-4 py-1.5 sm:py-2">
+                      <span>View All Activity</span>
+                      <svg 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        width="14" 
+                        height="14" 
+                        viewBox="0 0 24 24" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        strokeWidth="2" 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round"
+                        className="ml-1 sm:ml-2 sm:w-4 sm:h-4"
+                      >
+                        <path d="m9 18 6-6-6-6"/>
+                      </svg>
+                    </Link>
+                  </Button>
                 </div>
               </motion.div>
-            </div>
+            )}
           </motion.div>
         </div>
       </motion.div>

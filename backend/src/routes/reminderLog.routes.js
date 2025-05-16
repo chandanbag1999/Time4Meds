@@ -3,7 +3,8 @@ import {
   createReminderLog,
   getReminderLogs,
   updateReminderLogStatus,
-  getReminderStats
+  getReminderStats,
+  getReminderLogById
 } from '../controllers/reminderLog.controller.js';
 import { protect } from '../middleware/auth.js';
 import { validateReminderLog, validateStatusUpdate } from '../middleware/validate.js';
@@ -22,13 +23,17 @@ router.post('/', validateReminderLog, createReminderLog);
 // Query parameters: startDate, endDate, medicineId, status, page, limit
 router.get('/', getReminderLogs);
 
-// Update a reminder log status
-// PUT /api/reminder-logs/:id
-router.put('/:id', validateStatusUpdate, updateReminderLogStatus);
-
 // Get statistics for the user's reminder logs
 // GET /api/reminder-logs/stats
 // Query parameters: startDate, endDate
 router.get('/stats', getReminderStats);
+
+// Get a specific reminder log by ID
+// GET /api/reminder-logs/:id
+router.get('/:id', getReminderLogById);
+
+// Update a reminder log status
+// PUT /api/reminder-logs/:id
+router.put('/:id', validateStatusUpdate, updateReminderLogStatus);
 
 export default router; 

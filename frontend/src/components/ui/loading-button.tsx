@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 interface LoadingButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   isLoading?: boolean
   loadingText?: string
-  variant?: 'default' | 'primary' | 'secondary' | 'outline' | 'destructive' | 'ghost' | 'link'
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'link' | 'danger'
   size?: 'sm' | 'md' | 'lg'
   children: React.ReactNode
   className?: string

@@ -12,6 +12,7 @@ import testRoutes from './routes/test.routes.js';
 import { errorHandler, notFound } from './middleware/errorHandler.js';
 import { startReminderCronJob, stopReminderCronJob } from './jobs/reminderCron.js';
 import { protect } from './middleware/auth.js';
+import { getReminderLogById } from './controllers/reminderLog.controller.js';
 
 // Load environment variables
 dotenv.config();
@@ -61,6 +62,9 @@ apiRouter.get('/logs', protect, (req, res) => {
   req.url = '/reminders/log';
   apiRouter.handle(req, res);
 });
+
+// Add a route to handle specific log by ID - directly using the controller
+apiRouter.get('/logs/:id', protect, getReminderLogById);
 
 app.use('/api', apiRouter);
 

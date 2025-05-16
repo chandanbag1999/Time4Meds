@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { LoadingButton } from "@/components/ui/loading-button"
-import { Link, useNavigate } from "react-router-dom"
+import { Link, useNavigate, useParams } from "react-router-dom"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table"
 import { TableSkeleton } from "@/components/ui/table-skeleton"
@@ -58,8 +58,11 @@ export default function Logs() {
     sortOrder: 'desc'
   })
   const [medicineNames, setMedicineNames] = useState<Record<string, string>>({})
+  const [singleLogData, setSingleLogData] = useState<any>(null)
+  const [singleLogLoading, setSingleLogLoading] = useState(false)
   const { toast } = useToast()
   const navigate = useNavigate()
+  const { id } = useParams()
   
   useEffect(() => {
     const handleResize = () => {
@@ -69,6 +72,38 @@ export default function Logs() {
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
+
+  // Fetch a single log by ID when viewing details
+  useEffect(() => {
+    const fetchSingleLog = async () => {
+      if (id) {
+        try {
+          setSingleLogLoading(true);
+          // Fix: Use the correct API URL (no double 'api')
+          const response = await api.get(`/logs/${id}`);
+          
+          if (response?.data?.success && response.data.data) {
+            setSingleLogData(response.data.data);
+          } else {
+            toast("Log details not found", "error");
+            navigate('/logs');
+          }
+        } catch (error) {
+          console.error("Error fetching log details:", error);
+          toast("Error loading log details", "error");
+          navigate('/logs');
+        } finally {
+          setSingleLogLoading(false);
+        }
+      }
+    }
+
+    if (id) {
+      fetchSingleLog();
+    } else {
+      setSingleLogData(null);
+    }
+  }, [id, navigate, toast]);
 
   // Fetch medicine names for filter display
   useEffect(() => {
@@ -355,6 +390,92 @@ export default function Logs() {
     return statusClasses[status as keyof typeof statusClasses] || "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300";
   };
 
+  // Render single log view if ID is provided
+  if (id && singleLogLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="bg-white dark:bg-gray-800 backdrop-blur-sm rounded-2xl shadow-2xl p-6 mx-auto border dark:border-gray-700">
+          <div className="flex items-center gap-2 mb-6">
+            <Link to="/logs" className="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors">
+              &larr; Back to Logs
+            </Link>
+            <h1 className="text-2xl font-semibold ml-2 dark:text-gray-100">Log Details</h1>
+          </div>
+          <div className="py-8">
+            <CardSkeleton />
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  if (id && singleLogData) {
+    const log = singleLogData;
+    const medicineName = log.medicineId?.name || 'Unknown Medicine';
+    const status = log.status || 'unknown';
+    const timestamp = new Date(log.timestamp).toLocaleString();
+    const dosage = log.medicineId?.dosage || '';
+    const notes = log.notes || '';
+    
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="bg-white dark:bg-gray-800 backdrop-blur-sm rounded-2xl shadow-2xl p-6 mx-auto border dark:border-gray-700">
+          <div className="flex items-center gap-2 mb-6">
+            <Link to="/logs" className="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors">
+              &larr; Back to Logs
+            </Link>
+            <h1 className="text-2xl font-semibold ml-2 dark:text-gray-100">Log Details</h1>
+          </div>
+          
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>{medicineName}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Status</h3>
+                    <p className={`mt-1 inline-block px-2 py-1 text-sm rounded-full ${getStatusBadge(status)}`}>
+                      {status}
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Time Taken</h3>
+                    <p className="mt-1 text-gray-900 dark:text-gray-100">{timestamp}</p>
+                  </div>
+                  {dosage && (
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Dosage</h3>
+                      <p className="mt-1 text-gray-900 dark:text-gray-100">{dosage}</p>
+                    </div>
+                  )}
+                  {notes && (
+                    <div className="col-span-1 md:col-span-2">
+                      <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Notes</h3>
+                      <p className="mt-1 text-gray-900 dark:text-gray-100">{notes}</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+            
+            <div className="flex justify-between">
+              <Button
+                variant="outline"
+                onClick={() => navigate('/logs')}
+                className="border-gray-200 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700/30"
+              >
+                Back to Logs
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  // Regular logs list view
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <div className="bg-white dark:bg-gray-800 backdrop-blur-sm rounded-2xl shadow-2xl p-6 mx-auto border dark:border-gray-700">
@@ -368,14 +489,14 @@ export default function Logs() {
           <div className="flex gap-3">
             <Button 
               size="sm" 
-              className="rounded-full bg-white text-indigo-600 border border-indigo-200 hover:bg-indigo-50 dark:bg-gray-700 dark:text-indigo-400 dark:border-gray-600 dark:hover:bg-gray-600"
+              className="rounded-full bg-white text-indigo-600 border border-indigo-200 hover:bg-indigo-50/50 shadow-sm dark:bg-transparent dark:text-indigo-400 dark:border-gray-600/50 dark:hover:bg-gray-700/30"
               onClick={openFilterModal}
             >
               <Filter size={16} className="mr-1" /> Filter
             </Button>
             <Button 
               size="sm" 
-              className="rounded-full bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-700"
+              className="rounded-full bg-indigo-100 text-indigo-700 hover:bg-indigo-200 shadow-sm transition-all dark:bg-indigo-500/20 dark:text-indigo-300 dark:hover:bg-indigo-500/30"
               onClick={handleExport}
             >
               <Download size={16} className="mr-1" /> Export
@@ -411,7 +532,7 @@ export default function Logs() {
                 You can add medication logs by taking or skipping medications from your dashboard.
               </p>
               <Button
-                className="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-600 dark:hover:bg-indigo-700"
+                className="mt-4 bg-indigo-100 text-indigo-700 hover:bg-indigo-200 shadow-sm transition-all dark:bg-indigo-500/20 dark:text-indigo-300 dark:hover:bg-indigo-500/30"
                 onClick={() => navigate('/dashboard')}
               >
                 Go to Dashboard
@@ -439,7 +560,7 @@ export default function Logs() {
                     <Button 
                       size="sm" 
                       variant="ghost" 
-                      className="self-start dark:text-gray-300 dark:hover:bg-gray-700"
+                      className="self-start text-indigo-600 hover:bg-indigo-50/50 hover:text-indigo-700 dark:text-indigo-300 dark:hover:bg-indigo-500/10"
                       onClick={() => viewLogDetails(log.id)}
                     >
                       Details
@@ -476,7 +597,7 @@ export default function Logs() {
                         size="sm" 
                         variant="ghost"
                         onClick={() => viewLogDetails(log.id)}
-                        className="dark:text-gray-300 dark:hover:bg-gray-700"
+                        className="text-indigo-600 hover:bg-indigo-50/50 hover:text-indigo-700 dark:text-indigo-300 dark:hover:bg-indigo-500/10"
                       >
                         Details
                       </Button>
@@ -495,7 +616,7 @@ export default function Logs() {
                 isLoading={loadingMore}
                 loadingText="Loading..."
                 onClick={loadMore}
-                className="rounded-full dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                className="rounded-full border-gray-200 text-gray-600 hover:bg-gray-50/70 shadow-sm dark:border-gray-600/50 dark:text-gray-300 dark:hover:bg-gray-700/30"
                 disabled={currentPage >= totalPages}
               >
                 {currentPage >= totalPages ? "No More Logs" : "Load More"}

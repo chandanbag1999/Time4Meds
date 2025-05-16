@@ -42,6 +42,7 @@ function App() {
                   <Route path="/add-medicine" element={<AddMedicine />} />
                   <Route path="/edit-medicine/:id" element={<EditMedicine />} />
                   <Route path="/logs" element={<Logs />} />
+                  <Route path="/logs/:id" element={<Logs />} />
                   <Route path="/reminder-logs" element={<ReminderLogs />} />
                 </Route>
               </Route>

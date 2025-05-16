@@ -471,4 +471,45 @@ export const exportReminderLogs = async (req, res) => {
       error: error.message
     });
   }
+};
+
+// Get a single reminder log by ID
+export const getReminderLogById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Find the log and verify it belongs to the user
+    const log = await ReminderLog.findOne({
+      _id: id,
+      userId: req.user._id
+    }).populate('medicineId', 'name dosage frequency');
+    
+    if (!log) {
+      return res.status(404).json({
+        success: false,
+        message: 'Reminder log not found or not authorized'
+      });
+    }
+    
+    res.status(200).json({
+      success: true,
+      data: log
+    });
+  } catch (error) {
+    console.error('Error fetching reminder log:', error);
+    
+    // Handle MongoDB ID errors
+    if (error.name === 'CastError') {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid log ID format'
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching reminder log',
+      error: error.message
+    });
+  }
 }; 
