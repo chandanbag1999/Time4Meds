@@ -269,7 +269,35 @@ export default function Dashboard() {
           }
         }
         
-        console.log("Today's reminders:", reminderLogs);
+        console.log("Today's reminders from API:", reminderLogs);
+        
+        // If no reminders found but we have medicines, generate pending reminders
+        if (reminderLogs.length === 0 && medicines.length > 0) {
+          console.log("No reminders found, generating pending reminders from medicines");
+          
+          // Generate pending reminders based on medicines
+          const generatedReminders: ReminderLog[] = medicines
+            .filter(med => med.isActive)
+            .map((medicine, index) => {
+              // Generate a time based on medicine data or default time
+              const time = medicine.time || 
+                (medicine.frequency === 'daily' ? '08:00' : 
+                 medicine.frequency === 'weekly' ? '09:00' : '12:00');
+              
+              return {
+                id: `temp-${medicine._id}-${index}`,
+                medicineId: medicine._id,
+                medicineName: medicine.name,
+                status: 'pending',
+                date: today.toISOString(),
+                time: time
+              };
+            });
+          
+          console.log("Generated pending reminders:", generatedReminders);
+          reminderLogs = generatedReminders;
+        }
+        
         setTodayReminders(reminderLogs);
       } catch (err) {
         console.error("Error fetching today's reminders:", err);
@@ -293,7 +321,7 @@ export default function Dashboard() {
     }, 5 * 60 * 1000);
     
     return () => clearInterval(intervalId);
-  }, [usingSampleData]);
+  }, [usingSampleData, medicines]);
 
   // Fetch recent activity logs
   useEffect(() => {
@@ -377,88 +405,60 @@ export default function Dashboard() {
     
     try {
       const currentTime = new Date().toISOString();
+      const timeStr = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+      
       const logData = {
         medicineId,
         status,
-        date: currentTime,
-        time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
+        time: timeStr
       };
       
       if (!usingSampleData) {
         await apiService.post('/reminders/log', logData);
         
-        // Refresh the reminders list after logging
-        const today = new Date();
-        const formattedDate = format(today, 'yyyy-MM-dd');
-        const response = await apiService.get<any>(`/reminders/log?date=${formattedDate}`);
+        // Update the local state directly for immediate UI feedback
+        setTodayReminders(prev => prev.map(reminder => 
+          reminder.medicineId === medicineId 
+            ? { ...reminder, status } 
+            : reminder
+        ));
         
-        // Process the updated reminders to ensure they're in the correct format
-        let updatedReminders: ReminderLog[] = [];
-        
-        if (response && typeof response === 'object') {
-          // Handle different API response structures
-          if (response.success && response.data) {
-            if (response.data.logs && Array.isArray(response.data.logs)) {
-              updatedReminders = response.data.logs.map((log: any) => ({
-                id: log._id || log.id,
-                medicineId: log.medicineId?._id || log.medicineId,
-                medicineName: log.medicineId?.name || "Unknown Medicine",
-                status: log.status || "pending",
-                date: log.timestamp || log.date,
-                time: log.time
-              }));
-            }
-          } else if (Array.isArray(response)) {
-            updatedReminders = response.map((log: any) => ({
-              id: log._id || log.id,
-              medicineId: log.medicineId?._id || log.medicineId,
-              medicineName: log.medicineId?.name || "Unknown Medicine",
-              status: log.status || "pending",
-              date: log.timestamp || log.date,
-              time: log.time
-            }));
-          } else if (response.data) {
-            if (Array.isArray(response.data)) {
-              updatedReminders = response.data.map((log: any) => ({
-                id: log._id || log.id,
-                medicineId: log.medicineId?._id || log.medicineId,
-                medicineName: log.medicineId?.name || "Unknown Medicine",
-                status: log.status || "pending",
-                date: log.timestamp || log.date,
-                time: log.time
-              }));
-            } else if (response.data.logs && Array.isArray(response.data.logs)) {
-              updatedReminders = response.data.logs.map((log: any) => ({
-                id: log._id || log.id,
-                medicineId: log.medicineId?._id || log.medicineId,
-                medicineName: log.medicineId?.name || "Unknown Medicine",
-                status: log.status || "pending",
-                date: log.timestamp || log.date,
-                time: log.time
-              }));
-            }
-          }
-          
-          setTodayReminders(updatedReminders);
+        // Also refresh activity logs
+        const response = await apiService.get<any>('/reminder-logs?limit=5');
+        if (response && response.data && Array.isArray(response.data)) {
+          setActivityLogs(response.data);
+        } else if (response && response.data && response.data.logs && Array.isArray(response.data.logs)) {
+          setActivityLogs(response.data.logs);
         }
       } else {
-        // Update local state for sample data
-        const updatedReminders = todayReminders.map(reminder => {
-          if (reminder.medicineId === medicineId && reminder.status === 'pending') {
-            return { ...reminder, status };
-          }
-          return reminder;
-        });
-        setTodayReminders(updatedReminders);
+        // For sample data, just update the local state
+        setTodayReminders(prev => prev.map(reminder => 
+          reminder.medicineId === medicineId 
+            ? { ...reminder, status } 
+            : reminder
+        ));
+        
+        // Add to activity logs
+        const newActivityLog = {
+          _id: `temp-${Date.now()}`,
+          medicineId: {
+            _id: medicineId,
+            name: medicineName,
+            dosage: "Sample dosage"
+          },
+          status,
+          timestamp: currentTime,
+          time: timeStr
+        };
+        
+        setActivityLogs(prev => [newActivityLog, ...prev.slice(0, 4)]);
       }
       
-      const statusText = status === 'taken' ? 'taken' : 'skipped';
-      toast(`${medicineName} marked as ${statusText}`, 'success');
-    } catch (err) {
-      console.error(`Error logging medicine as ${status}:`, err);
-      toast(`Failed to log medicine status`, 'error');
+      toast(`${medicineName} marked as ${status}`, "success");
+    } catch (error) {
+      console.error(`Error logging ${status} status:`, error);
+      toast(`Failed to mark ${medicineName} as ${status}`, "error");
     } finally {
-      // Remove loading state for this medicine
       setActionsLoading(prev => ({ ...prev, [medicineId]: false }));
     }
   };
