@@ -3,7 +3,7 @@
 <div align="center">
   <img src="https://i.imgur.com/hJ7LMbH.png" alt="Time4Meds Logo" width="120" />
   <h3>Never Miss a Dose</h3>
-  
+
   [![Live Demo](https://img.shields.io/badge/Live_Demo-Visit_Site-blue?style=for-the-badge)](https://time4-meds.vercel.app/)
   ![React](https://img.shields.io/badge/React-19-blue?style=flat-square&logo=react)
   ![Node](https://img.shields.io/badge/Node-Express-green?style=flat-square&logo=node.js)
@@ -12,8 +12,22 @@
 
 ## 📱 Application Preview
 
+### Login Page
 <div align="center">
-  <img src="https://i.imgur.com/WiQNLYI.png" alt="Time4Meds Landing Page" width="80%" />
+  <img src="./docs/images/login-page.png" alt="Time4Meds Login Page" width="80%" />
+  <p><em>Clean and intuitive login interface with modern design</em></p>
+</div>
+
+### Dashboard
+<div align="center">
+  <img src="./docs/images/dashboard.png" alt="Time4Meds Dashboard" width="80%" />
+  <p><em>Comprehensive dashboard showing medication overview, today's reminders, and activity logs</em></p>
+</div>
+
+### Reminder Logs
+<div align="center">
+  <img src="./docs/images/reminder-logs.png" alt="Time4Meds Reminder Logs" width="80%" />
+  <p><em>Detailed reminder logs with status tracking and filtering options</em></p>
 </div>
 
 ## 🚀 Overview
@@ -22,11 +36,34 @@ Time4Meds is a comprehensive medication management system designed to help users
 
 ## ✨ Features
 
-- **Medication Management** - Add, edit, and track your medications
-- **Smart Reminders** - Receive timely notifications for your doses
-- **Adherence Tracking** - Monitor your medication adherence over time
-- **User Authentication** - Secure login and registration system
-- **Responsive Design** - Works seamlessly on desktop and mobile devices
+### 🔐 User Authentication
+- **Secure Login/Registration** - Clean, intuitive authentication interface
+- **Password Recovery** - Forgot password functionality with email reset
+- **JWT-based Security** - Secure token-based authentication system
+
+### 💊 Medication Management
+- **Add & Edit Medications** - Comprehensive medication entry with dosage, frequency, and timing
+- **Smart Scheduling** - Set multiple daily reminder times for each medication
+- **Medication Overview** - Visual dashboard showing all active medications
+- **Quick Actions** - Easy access to edit, delete, or manage medications
+
+### ⏰ Smart Reminders
+- **Automated Notifications** - Timely email and system reminders for medication doses
+- **Status Tracking** - Mark medications as taken, missed, or skipped
+- **Flexible Scheduling** - Support for daily, weekly, and custom frequency patterns
+- **Real-time Updates** - Instant status updates and reminder management
+
+### 📊 Adherence Tracking
+- **Detailed Logs** - Comprehensive reminder history with timestamps and status
+- **Filter & Search** - Advanced filtering by medicine, date range, and status
+- **Adherence Analytics** - Visual insights into medication compliance patterns
+- **Activity Timeline** - Chronological view of all medication activities
+
+### 🎨 Modern Interface
+- **Dark/Light Mode** - Full theme support with system preference detection
+- **Responsive Design** - Optimized for desktop, tablet, and mobile devices
+- **Intuitive Navigation** - Clean, user-friendly interface design
+- **Real-time Feedback** - Toast notifications and loading states
 
 ## 🛠️ Technology Stack
 
@@ -174,4 +211,4 @@ This project is licensed under the ISC License.
 
 ## 📱 Live Demo
 
-Visit the live application at [https://time4-meds.vercel.app/](https://time4-meds.vercel.app/) 
+Visit the live application at [https://time4-meds.vercel.app/](https://time4-meds.vercel.app/)
