@@ -20,6 +20,12 @@ import Logs from './pages/Logs'
 import ReminderLogs from './pages/ReminderLogs'
 import NotFound from './pages/NotFound'
 
+// New Feature Pages
+import AdherenceAnalytics from './pages/AdherenceAnalytics'
+import InventoryManagement from './pages/InventoryManagement'
+import CaregiverSettings from './pages/CaregiverSettings'
+import ComponentTest from './pages/ComponentTest'
+
 function App() {
   return (
     <ThemeProvider>
@@ -34,7 +40,8 @@ function App() {
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/reset-password/:token" element={<ResetPassword />} />
-              
+              <Route path="/test" element={<ComponentTest />} />
+
               {/* Protected Routes */}
               <Route element={<PrivateRoute />}>
                 <Route element={<ResponsiveLayout />}>
@@ -44,9 +51,15 @@ function App() {
                   <Route path="/logs" element={<Logs />} />
                   <Route path="/logs/:id" element={<Logs />} />
                   <Route path="/reminder-logs" element={<ReminderLogs />} />
+
+                  {/* New Feature Routes */}
+                  <Route path="/analytics" element={<AdherenceAnalytics />} />
+                  <Route path="/inventory" element={<InventoryManagement />} />
+                  <Route path="/caregivers" element={<CaregiverSettings />} />
+                  <Route path="/component-test" element={<ComponentTest />} />
                 </Route>
               </Route>
-              
+
               {/* 404 Route */}
               <Route path="*" element={<NotFound />} />
             </Routes>

@@ -4,7 +4,10 @@ import {
   getReminderLogs,
   updateReminderLogStatus,
   getReminderStats,
-  getReminderLogById
+  getReminderLogById,
+  getAdherenceAnalytics,
+  getInventoryStatus,
+  updateInventory
 } from '../controllers/reminderLog.controller.js';
 import { protect } from '../middleware/auth.js';
 import { validateReminderLog, validateStatusUpdate } from '../middleware/validate.js';
@@ -28,6 +31,19 @@ router.get('/', getReminderLogs);
 // Query parameters: startDate, endDate
 router.get('/stats', getReminderStats);
 
+// Get adherence analytics
+// GET /api/reminder-logs/analytics
+// Query parameters: period (7days, 30days, 90days, 6months, 1year)
+router.get('/analytics', getAdherenceAnalytics);
+
+// Get inventory status for all medicines
+// GET /api/reminder-logs/inventory
+router.get('/inventory', getInventoryStatus);
+
+// Update inventory for a medicine
+// PUT /api/reminder-logs/inventory/:medicineId
+router.put('/inventory/:medicineId', updateInventory);
+
 // Get a specific reminder log by ID
 // GET /api/reminder-logs/:id
 router.get('/:id', getReminderLogById);
@@ -36,4 +52,4 @@ router.get('/:id', getReminderLogById);
 // PUT /api/reminder-logs/:id
 router.put('/:id', validateStatusUpdate, updateReminderLogStatus);
 
-export default router; 
+export default router;

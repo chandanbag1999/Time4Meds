@@ -20,6 +20,7 @@ interface Medicine {
   dosage: string
   frequency: string
   time?: string
+  times?: string[]
   isActive: boolean
   createdAt: string
 }
@@ -57,37 +58,37 @@ const SAMPLE_MEDICINES: Medicine[] = [
 const generateSampleReminders = (): ReminderLog[] => {
   const today = new Date()
   return [
-    { 
-      id: "1", 
-      medicineId: "1", 
-      medicineName: "Aspirin", 
-      status: "pending", 
-      date: today.toISOString(), 
-      time: "08:00" 
+    {
+      id: "1",
+      medicineId: "1",
+      medicineName: "Aspirin",
+      status: "pending",
+      date: today.toISOString(),
+      time: "08:00"
     },
-    { 
-      id: "2", 
-      medicineId: "2", 
-      medicineName: "Amoxicillin", 
-      status: "taken", 
-      date: today.toISOString(), 
-      time: "09:00" 
+    {
+      id: "2",
+      medicineId: "2",
+      medicineName: "Amoxicillin",
+      status: "taken",
+      date: today.toISOString(),
+      time: "09:00"
     },
-    { 
-      id: "3", 
-      medicineId: "3", 
-      medicineName: "Vitamin D", 
-      status: "missed", 
-      date: today.toISOString(), 
-      time: "07:00" 
+    {
+      id: "3",
+      medicineId: "3",
+      medicineName: "Vitamin D",
+      status: "missed",
+      date: today.toISOString(),
+      time: "07:00"
     },
-    { 
-      id: "4", 
-      medicineId: "2", 
-      medicineName: "Amoxicillin", 
-      status: "pending", 
-      date: today.toISOString(), 
-      time: "17:00" 
+    {
+      id: "4",
+      medicineId: "2",
+      medicineName: "Amoxicillin",
+      status: "pending",
+      date: today.toISOString(),
+      time: "17:00"
     }
   ]
 }
@@ -108,7 +109,7 @@ export default function Dashboard() {
   const { user, logout } = useAuth()
   const { theme } = useTheme()
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
-  
+
   // State for the medicine detail sheet
   const [selectedMedicine, setSelectedMedicine] = useState<Medicine | null>(null)
   const [isDetailSheetOpen, setIsDetailSheetOpen] = useState(false)
@@ -132,8 +133,8 @@ export default function Dashboard() {
 
   const itemVariants = {
     hidden: { opacity: 0, y: 15 },
-    visible: { 
-      opacity: 1, 
+    visible: {
+      opacity: 1,
       y: 0,
       transition: {
         type: "spring",
@@ -156,13 +157,13 @@ export default function Dashboard() {
     // Check if there's a message in the location state
     if (location.state && location.state.message) {
       toast(location.state.message, "success")
-      
+
       // If message is about adding a medicine, refresh the medicines list
-      if (location.state.message.includes('has been added') || 
+      if (location.state.message.includes('has been added') ||
           location.state.message.includes('added to your medications')) {
         refreshMedicines()
       }
-      
+
       // Clear the location state to prevent showing the toast again on refresh
       window.history.replaceState({}, document.title)
     }
@@ -178,7 +179,7 @@ export default function Dashboard() {
       setLoading(true)
       const data = await apiService.get<Medicine[]>("/medicines")
       setMedicines(Array.isArray(data) ? data : [])
-      
+
       // Get user info from localStorage
       const userString = localStorage.getItem("user")
       // Only try to parse if userString is not null or undefined
@@ -210,17 +211,17 @@ export default function Dashboard() {
     const fetchTodayReminders = async () => {
       try {
         setRemindersLoading(true);
-        
+
         // Format today's date in YYYY-MM-DD format for the API
         const today = new Date();
         const formattedDate = format(today, 'yyyy-MM-dd');
-        
+
         // Get reminders for today only
         const response = await apiService.get<any>(`/reminders/log?date=${formattedDate}`);
-        
+
         // Check response structure and extract logs
         let reminderLogs: ReminderLog[] = [];
-        
+
         if (response && typeof response === 'object') {
           // Handle different API response structures
           if (response.success && response.data) {
@@ -268,36 +269,49 @@ export default function Dashboard() {
             }
           }
         }
-        
+
         console.log("Today's reminders from API:", reminderLogs);
-        
+
         // If no reminders found but we have medicines, generate pending reminders
         if (reminderLogs.length === 0 && medicines.length > 0) {
           console.log("No reminders found, generating pending reminders from medicines");
-          
+
           // Generate pending reminders based on medicines
-          const generatedReminders: ReminderLog[] = medicines
+          const generatedReminders: ReminderLog[] = [];
+
+          medicines
             .filter(med => med.isActive)
-            .map((medicine, index) => {
-              // Generate a time based on medicine data or default time
-              const time = medicine.time || 
-                (medicine.frequency === 'daily' ? '08:00' : 
-                 medicine.frequency === 'weekly' ? '09:00' : '12:00');
-              
-              return {
-                id: `temp-${medicine._id}-${index}`,
-                medicineId: medicine._id,
-                medicineName: medicine.name,
-                status: 'pending',
-                date: today.toISOString(),
-                time: time
-              };
+            .forEach((medicine) => {
+              // Use the actual times from the medicine's times array
+              if (medicine.times && Array.isArray(medicine.times)) {
+                medicine.times.forEach((time, timeIndex) => {
+                  generatedReminders.push({
+                    id: `temp-${medicine._id}-${timeIndex}`,
+                    medicineId: medicine._id,
+                    medicineName: medicine.name,
+                    status: 'pending',
+                    date: today.toISOString(),
+                    time: time // Use the actual time from the medicine
+                  });
+                });
+              } else {
+                // Fallback for medicines without times array
+                const defaultTime = medicine.time || '08:00';
+                generatedReminders.push({
+                  id: `temp-${medicine._id}-0`,
+                  medicineId: medicine._id,
+                  medicineName: medicine.name,
+                  status: 'pending',
+                  date: today.toISOString(),
+                  time: defaultTime
+                });
+              }
             });
-          
+
           console.log("Generated pending reminders:", generatedReminders);
           reminderLogs = generatedReminders;
         }
-        
+
         setTodayReminders(reminderLogs);
       } catch (err) {
         console.error("Error fetching today's reminders:", err);
@@ -314,12 +328,12 @@ export default function Dashboard() {
     };
 
     fetchTodayReminders();
-    
+
     // Set up periodic refresh (every 5 minutes)
     const intervalId = setInterval(() => {
       fetchTodayReminders();
     }, 5 * 60 * 1000);
-    
+
     return () => clearInterval(intervalId);
   }, [usingSampleData, medicines]);
 
@@ -328,12 +342,12 @@ export default function Dashboard() {
     const fetchRecentActivityLogs = async () => {
       try {
         setActivityLogsLoading(true);
-        
+
         // Limit to 5 most recent logs
         const response = await apiService.get<any>('/reminder-logs?limit=5');
-        
+
         let logs: ActivityLog[] = [];
-        
+
         if (response && typeof response === 'object') {
           if (response.success && response.data && response.data.logs) {
             logs = response.data.logs;
@@ -345,7 +359,7 @@ export default function Dashboard() {
             logs = response.data.logs;
           }
         }
-        
+
         console.log("Recent activity logs:", logs);
         setActivityLogs(logs);
       } catch (err) {
@@ -374,12 +388,12 @@ export default function Dashboard() {
     };
 
     fetchRecentActivityLogs();
-    
+
     // Set up periodic refresh (every 5 minutes)
     const intervalId = setInterval(() => {
       fetchRecentActivityLogs();
     }, 5 * 60 * 1000);
-    
+
     return () => clearInterval(intervalId);
   }, [usingSampleData]);
 
@@ -402,27 +416,27 @@ export default function Dashboard() {
   const logMedicineStatus = async (medicineId: string, medicineName: string, status: 'taken' | 'skipped') => {
     // Mark this specific medicine as loading
     setActionsLoading(prev => ({ ...prev, [medicineId]: true }));
-    
+
     try {
       const currentTime = new Date().toISOString();
       const timeStr = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
-      
+
       const logData = {
         medicineId,
         status,
         time: timeStr
       };
-      
+
       if (!usingSampleData) {
         await apiService.post('/reminders/log', logData);
-        
+
         // Update the local state directly for immediate UI feedback
-        setTodayReminders(prev => prev.map(reminder => 
-          reminder.medicineId === medicineId 
-            ? { ...reminder, status } 
+        setTodayReminders(prev => prev.map(reminder =>
+          reminder.medicineId === medicineId
+            ? { ...reminder, status }
             : reminder
         ));
-        
+
         // Also refresh activity logs
         const response = await apiService.get<any>('/reminder-logs?limit=5');
         if (response && response.data && Array.isArray(response.data)) {
@@ -432,12 +446,12 @@ export default function Dashboard() {
         }
       } else {
         // For sample data, just update the local state
-        setTodayReminders(prev => prev.map(reminder => 
-          reminder.medicineId === medicineId 
-            ? { ...reminder, status } 
+        setTodayReminders(prev => prev.map(reminder =>
+          reminder.medicineId === medicineId
+            ? { ...reminder, status }
             : reminder
         ));
-        
+
         // Add to activity logs
         const newActivityLog = {
           _id: `temp-${Date.now()}`,
@@ -450,10 +464,10 @@ export default function Dashboard() {
           timestamp: currentTime,
           time: timeStr
         };
-        
+
         setActivityLogs(prev => [newActivityLog, ...prev.slice(0, 4)]);
       }
-      
+
       toast(`${medicineName} marked as ${status}`, "success");
     } catch (error) {
       console.error(`Error logging ${status} status:`, error);
@@ -466,7 +480,7 @@ export default function Dashboard() {
   // Format time for display
   const formatTime = (timeString: string): string => {
     if (!timeString) return '';
-    
+
     // If time is already in HH:MM format, convert to 12-hour format
     if (timeString.includes(':')) {
       const [hours, minutes] = timeString.split(':').map(Number)
@@ -474,17 +488,17 @@ export default function Dashboard() {
       const hour12 = hours % 12 || 12
       return `${hour12}:${minutes.toString().padStart(2, '0')} ${period}`
     }
-    
+
     // If it's an ISO date string
     if (timeString.includes('T')) {
       const date = new Date(timeString)
-      return date.toLocaleTimeString('en-US', { 
-        hour: 'numeric', 
+      return date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
         minute: '2-digit',
-        hour12: true 
+        hour12: true
       })
     }
-    
+
     return timeString
   }
 
@@ -496,7 +510,7 @@ export default function Dashboard() {
       missed: "bg-gradient-to-r from-red-100 to-rose-100 text-red-700 dark:from-red-900/30 dark:to-rose-900/30 dark:text-red-400 border border-red-200 dark:border-red-800/30",
       skipped: "bg-gradient-to-r from-amber-100 to-orange-100 text-amber-700 dark:from-amber-900/30 dark:to-orange-900/30 dark:text-amber-400 border border-amber-200 dark:border-amber-800/30"
     }
-    
+
     return (
       <span className={`inline-block px-3 py-1 text-xs font-medium rounded-full shadow-sm ${statusClasses[status] || "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300"}`}>
         {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -549,7 +563,7 @@ export default function Dashboard() {
   return (
     <Container size="2xl" className="px-4 sm:px-6 md:px-8 lg:px-10 py-6 sm:py-8 md:py-10 max-w-full md:max-w-7xl mx-auto">
       {/* Header Section with Welcome Message - IMPROVED */}
-      <motion.div 
+      <motion.div
         className="relative mb-6 sm:mb-8 md:mb-10 rounded-2xl sm:rounded-3xl overflow-hidden"
         initial="hidden"
         animate="visible"
@@ -566,11 +580,35 @@ export default function Dashboard() {
               <p className="text-base sm:text-lg text-gray-600 dark:text-gray-300 max-w-xl">
                 Manage your medications and keep track of your health journey with Time4Meds. We'll help you stay on schedule.
               </p>
+
+              {/* New Feature Cards */}
+              <div className="grid grid-cols-3 gap-3 mt-4">
+                <Link to="/analytics" className="flex flex-col items-center p-3 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-xl border border-purple-100 dark:border-purple-800/30 hover:shadow-md transition-all">
+                  <svg className="w-5 h-5 text-purple-600 dark:text-purple-400 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                  <span className="text-xs font-medium text-gray-700 dark:text-gray-300">Analytics</span>
+                </Link>
+
+                <Link to="/inventory" className="flex flex-col items-center p-3 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-xl border border-blue-100 dark:border-blue-800/30 hover:shadow-md transition-all">
+                  <svg className="w-5 h-5 text-blue-600 dark:text-blue-400 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                  <span className="text-xs font-medium text-gray-700 dark:text-gray-300">Inventory</span>
+                </Link>
+
+                <Link to="/caregivers" className="flex flex-col items-center p-3 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-xl border border-emerald-100 dark:border-emerald-800/30 hover:shadow-md transition-all">
+                  <svg className="w-5 h-5 text-emerald-600 dark:text-emerald-400 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                  <span className="text-xs font-medium text-gray-700 dark:text-gray-300">Caregivers</span>
+                </Link>
+              </div>
             </div>
           </div>
-          
+
           {/* Quick Stats Cards */}
-          <motion.div 
+          <motion.div
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mt-5 sm:mt-6"
             variants={containerVariants}
             initial="hidden"
@@ -626,7 +664,7 @@ export default function Dashboard() {
       </motion.div>
 
       {/* Today's Reminders Section - IMPROVED */}
-      <motion.div 
+      <motion.div
         className="mb-6 sm:mb-8 md:mb-12 bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl shadow-md border border-gray-100 dark:border-gray-700 overflow-hidden"
         initial="hidden"
         animate="visible"
@@ -643,8 +681,8 @@ export default function Dashboard() {
               </div>
               Today's Reminders
             </h2>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="sm"
               href="/reminder-logs"
               asChild
@@ -663,7 +701,7 @@ export default function Dashboard() {
             </Button>
           </div>
         </div>
-        
+
         <div className="px-4 sm:px-6 py-5 sm:py-6">
           {remindersLoading ? (
             isMobile ? (
@@ -676,14 +714,14 @@ export default function Dashboard() {
               </div>
             )
           ) : todayReminders.length === 0 ? (
-            <motion.div 
+            <motion.div
               className="text-center py-8 sm:py-10 md:py-12 px-3 sm:px-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-gray-50/50 to-primary/5 dark:from-gray-800/80 dark:to-primary/20 border border-dashed border-gray-200 dark:border-gray-700/50"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5, ease: [0.34, 1.56, 0.64, 1] }}
             >
               <div className="max-w-md mx-auto">
-                <motion.div 
+                <motion.div
                   className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-white dark:bg-gray-700 shadow-sm flex items-center justify-center mx-auto mb-4 sm:mb-6"
                   initial={{ y: 10, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
@@ -693,7 +731,7 @@ export default function Dashboard() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                 </motion.div>
-                <motion.p 
+                <motion.p
                   className="text-lg sm:text-xl font-semibold text-gray-700 dark:text-gray-200 mb-1 sm:mb-2"
                   initial={{ y: 10, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
@@ -701,7 +739,7 @@ export default function Dashboard() {
                 >
                   All caught up!
                 </motion.p>
-                <motion.p 
+                <motion.p
                   className="text-sm sm:text-base text-gray-500 dark:text-gray-400 mb-5 sm:mb-6"
                   initial={{ y: 10, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
@@ -714,8 +752,8 @@ export default function Dashboard() {
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.6, duration: 0.5 }}
                 >
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="sm"
                     href="/add-medicine"
                     asChild
@@ -737,15 +775,15 @@ export default function Dashboard() {
             </motion.div>
           ) : isMobile ? (
             // Mobile view
-            <motion.div 
+            <motion.div
               className="space-y-3 sm:space-y-4"
               variants={containerVariants}
               initial="hidden"
               animate="visible"
             >
               {todayReminders.map((reminder) => (
-                <motion.div 
-                  key={reminder.id} 
+                <motion.div
+                  key={reminder.id}
                   className="p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800/70 shadow-sm hover:shadow-md transition-all"
                   variants={itemVariants}
                   whileHover={{ y: -2, boxShadow: "0 4px 12px -2px rgba(0, 0, 0, 0.08)" }}
@@ -762,7 +800,7 @@ export default function Dashboard() {
                     </div>
                     {getStatusBadge(reminder.status)}
                   </div>
-                  
+
                   {reminder.status === 'pending' && (
                     <div className="flex gap-2 sm:gap-3 mt-3 sm:mt-4 pt-2 sm:pt-3 border-t border-gray-100 dark:border-gray-700">
                       <LoadingButton
@@ -792,7 +830,7 @@ export default function Dashboard() {
             </motion.div>
           ) : (
             // Desktop view
-            <motion.div 
+            <motion.div
               className="overflow-hidden rounded-lg sm:rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -813,8 +851,8 @@ export default function Dashboard() {
                   animate="visible"
                 >
                   {todayReminders.map((reminder) => (
-                    <motion.tr 
-                      key={reminder.id} 
+                    <motion.tr
+                      key={reminder.id}
                       className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
                       variants={itemVariants}
                     >
@@ -854,7 +892,7 @@ export default function Dashboard() {
                           </div>
                         ) : (
                           <span className="text-xs sm:text-sm px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
-                            {reminder.status === 'taken' ? 'Taken' : 
+                            {reminder.status === 'taken' ? 'Taken' :
                             reminder.status === 'missed' ? 'Missed' : 'Skipped'}
                           </span>
                         )}
@@ -869,7 +907,7 @@ export default function Dashboard() {
       </motion.div>
 
       {/* Your Medications Section */}
-      <motion.div 
+      <motion.div
         className="mb-6 sm:mb-8 md:mb-12"
         initial="hidden"
         animate="visible"
@@ -885,8 +923,8 @@ export default function Dashboard() {
             </div>
             Your Medications
           </h2>
-          <Button 
-            variant="primary" 
+          <Button
+            variant="primary"
             size="md"
             href="/add-medicine"
             asChild
@@ -904,7 +942,7 @@ export default function Dashboard() {
             </Link>
           </Button>
         </div>
-      
+
         {usingSampleData && (
           <div className="mb-4 sm:mb-6 rounded-lg sm:rounded-xl bg-amber-50 border border-amber-200 p-3 sm:p-4 text-sm sm:text-base text-amber-700">
             <div className="flex items-center">
@@ -923,7 +961,7 @@ export default function Dashboard() {
             <CardSkeleton count={6} />
           </div>
         ) : medicines.length === 0 ? (
-          <motion.div 
+          <motion.div
             className="overflow-hidden rounded-xl sm:rounded-3xl shadow-md bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 mobile-animate-in"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -932,22 +970,22 @@ export default function Dashboard() {
             <div className="relative">
               {/* Decorative top gradient */}
               <div className="absolute inset-x-0 top-0 h-20 sm:h-28 bg-gradient-to-r from-primary/5 via-secondary/5 to-accent/5 dark:from-primary/10 dark:via-secondary/10 dark:to-accent/10"></div>
-              
+
               {/* Content */}
               <div className="relative pt-16 sm:pt-20 pb-12 sm:pb-16 px-4 sm:px-6 flex flex-col items-center text-center">
                 {/* Pill icon in circular container */}
                 <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-xl sm:rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 dark:from-primary/20 dark:to-accent/20 flex items-center justify-center mb-4 sm:mb-6 shadow-sm">
                   <div className="w-10 h-10 sm:w-16 sm:h-16 rounded-lg sm:rounded-xl bg-white dark:bg-gray-700 flex items-center justify-center shadow-sm">
-                    <svg 
-                      xmlns="http://www.w3.org/2000/svg" 
-                      width="20" 
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
                       height="20"
-                      viewBox="0 0 24 24" 
-                      fill="none" 
-                      stroke="currentColor" 
-                      strokeWidth="1.5" 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
                       className="text-accent dark:text-accent sm:w-8 sm:h-8"
                     >
                       <path d="m12 22 4-4" />
@@ -961,15 +999,15 @@ export default function Dashboard() {
                     </svg>
                   </div>
                 </div>
-                
+
                 {/* Text */}
                 <h3 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2 sm:mb-3">No medications yet</h3>
                 <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 max-w-md mb-6 sm:mb-8">
                   Add your medications to get reminders and keep track of your health journey. Never miss a dose again!
                 </p>
-                
+
                 {/* Button */}
-                <Button 
+                <Button
                   variant="primary"
                   size="lg"
                   href="/add-medicine"
@@ -987,7 +1025,7 @@ export default function Dashboard() {
                     Add Your First Medicine
                   </Link>
                 </Button>
-                
+
                 {/* Helpful note */}
                 <p className="mt-4 sm:mt-6 text-xs sm:text-sm text-gray-400 dark:text-gray-500">
                   You can add multiple medications and customize reminder schedules
@@ -996,15 +1034,15 @@ export default function Dashboard() {
             </div>
           </motion.div>
         ) : (
-          <motion.div 
+          <motion.div
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6"
             variants={containerVariants}
             initial="hidden"
             animate="visible"
           >
             {medicines.map((medicine) => (
-              <motion.div 
-                key={medicine._id} 
+              <motion.div
+                key={medicine._id}
                 className="glass-card p-0 h-full cursor-pointer overflow-hidden mobile-card-shadow transition-all hover:shadow-lg dark:bg-gray-700/60"
                 onClick={() => openMedicineDetail(medicine)}
                 variants={itemVariants}
@@ -1015,14 +1053,14 @@ export default function Dashboard() {
                   <div className="flex justify-between items-start mb-3 sm:mb-4">
                     <h3 className="font-semibold text-base sm:text-lg text-gray-800 dark:text-gray-100">{medicine.name}</h3>
                     <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs font-medium ${
-                      medicine.isActive 
-                        ? 'bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-700 dark:from-emerald-900/30 dark:to-teal-900/30 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/30' 
+                      medicine.isActive
+                        ? 'bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-700 dark:from-emerald-900/30 dark:to-teal-900/30 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/30'
                         : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600/50'
                     }`}>
                       {medicine.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </div>
-                  
+
                   <div className="text-xs sm:text-sm space-y-1.5 sm:space-y-2 flex-grow">
                     <div className="flex">
                       <span className="text-gray-500 dark:text-gray-400 w-16 sm:w-20 flex items-center">
@@ -1054,9 +1092,9 @@ export default function Dashboard() {
                       </div>
                     )}
                   </div>
-                  
+
                   <div className="mt-3 sm:mt-4 md:mt-5 pt-2 sm:pt-3 md:pt-4 border-t border-gray-100 dark:border-gray-700 flex gap-2 sm:gap-3">
-                    <Button 
+                    <Button
                       variant="ghost"
                       size="sm"
                       className="flex-1 text-xs sm:text-sm text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-primary hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors rounded-lg sm:rounded-xl"
@@ -1072,7 +1110,7 @@ export default function Dashboard() {
                         Edit
                       </Link>
                     </Button>
-                    <Button 
+                    <Button
                       variant="ghost"
                       size="sm"
                       className="flex-1 text-xs sm:text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors rounded-lg sm:rounded-xl"
@@ -1095,7 +1133,7 @@ export default function Dashboard() {
       </motion.div>
 
       {/* Recent Logs Section */}
-      <motion.div 
+      <motion.div
         className="mt-8 sm:mt-12 md:mt-16"
         initial="hidden"
         animate="visible"
@@ -1108,16 +1146,16 @@ export default function Dashboard() {
             <div className="flex justify-between items-center">
               <div className="flex items-center">
                 <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-accent/10 dark:bg-accent/20 flex items-center justify-center shadow-sm">
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    width="16" 
-                    height="16" 
-                    viewBox="0 0 24 24" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    strokeWidth="2" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                     className="text-accent dark:text-accent sm:w-5 sm:h-5"
                   >
                     <circle cx="12" cy="12" r="10"/>
@@ -1128,12 +1166,12 @@ export default function Dashboard() {
                   Activity Log
                 </h2>
               </div>
-              
+
               {/* Responsive navigation links */}
               <div className="flex gap-2">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   asChild
                   className="rounded-full text-xs sm:text-sm text-accent dark:text-accent hover:bg-accent/5 dark:hover:bg-accent/10"
                   onClick={(e) => {
@@ -1144,15 +1182,15 @@ export default function Dashboard() {
                   <Link to="/reminder-logs" className="flex items-center">
                     <span className="hidden sm:inline mr-1">Reminder Logs</span>
                     <span className="sm:hidden">Reminder<br/>Logs</span>
-                    <svg 
-                      xmlns="http://www.w3.org/2000/svg" 
-                      width="14" 
-                      height="14" 
-                      viewBox="0 0 24 24" 
-                      fill="none" 
-                      stroke="currentColor" 
-                      strokeWidth="2" 
-                      strokeLinecap="round" 
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
                       strokeLinejoin="round"
                       className="ml-1 sm:w-4 sm:h-4"
                     >
@@ -1160,9 +1198,9 @@ export default function Dashboard() {
                     </svg>
                   </Link>
                 </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   asChild
                   className="rounded-full text-xs sm:text-sm text-accent dark:text-accent hover:bg-accent/5 dark:hover:bg-accent/10"
                   onClick={(e) => {
@@ -1173,15 +1211,15 @@ export default function Dashboard() {
                   <Link to="/logs" className="flex items-center">
                     <span className="hidden sm:inline mr-1">View All</span>
                     <span className="sm:hidden">View<br/>All</span>
-                    <svg 
-                      xmlns="http://www.w3.org/2000/svg" 
-                      width="14" 
-                      height="14" 
-                      viewBox="0 0 24 24" 
-                      fill="none" 
-                      stroke="currentColor" 
-                      strokeWidth="2" 
-                      strokeLinecap="round" 
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
                       strokeLinejoin="round"
                       className="ml-1 sm:w-4 sm:h-4"
                     >
@@ -1194,7 +1232,7 @@ export default function Dashboard() {
           </div>
 
           {/* Activity Log content */}
-          <motion.div 
+          <motion.div
             className="p-4 sm:p-6 md:p-8 mobile-animate-in"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -1208,30 +1246,30 @@ export default function Dashboard() {
               </div>
             ) : activityLogs.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 sm:py-10 md:py-12 px-4 sm:px-6 text-center max-w-lg mx-auto">
-                <motion.div 
+                <motion.div
                   className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-gradient-to-br from-accent/10 to-primary/10 dark:from-accent/20 dark:to-primary/20 flex items-center justify-center mb-4 sm:mb-6 shadow-sm"
                   initial={{ scale: 0.8, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ delay: 0.3, type: "spring", stiffness: 260, damping: 20 }}
                 >
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    width="20" 
-                    height="20" 
-                    viewBox="0 0 24 24" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    strokeWidth="1.5" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                     className="text-accent dark:text-accent sm:w-8 sm:h-8"
                   >
                     <path d="M12 8v4l3 3"/>
                     <circle cx="12" cy="12" r="10"/>
                   </svg>
                 </motion.div>
-                
-                <motion.h3 
+
+                <motion.h3
                   className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-100 mb-2"
                   initial={{ y: 10, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
@@ -1239,7 +1277,7 @@ export default function Dashboard() {
                 >
                   Your activity timeline
                 </motion.h3>
-                <motion.p 
+                <motion.p
                   className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-1"
                   initial={{ y: 10, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
@@ -1247,7 +1285,7 @@ export default function Dashboard() {
                 >
                   Recent medication activities will appear here
                 </motion.p>
-                <motion.p 
+                <motion.p
                   className="text-xs sm:text-sm text-gray-500 dark:text-gray-500"
                   initial={{ y: 10, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
@@ -1255,20 +1293,20 @@ export default function Dashboard() {
                 >
                   Track your medication history and adherence over time
                 </motion.p>
-                
-                <motion.div 
+
+                <motion.div
                   className="mt-6 sm:mt-8 w-full max-w-xs bg-white/50 dark:bg-gray-800/60 rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-dashed border-gray-200 dark:border-gray-700/50"
                   initial={{ y: 15, opacity: 0 }}
                   animate={{ y: 0, opacity: 0.5 }}
-                  transition={{ 
-                    delay: 0.7, 
+                  transition={{
+                    delay: 0.7,
                     duration: 0.6,
                     type: "spring",
                     stiffness: 100,
                     damping: 15
                   }}
-                  whileHover={{ 
-                    y: -5, 
+                  whileHover={{
+                    y: -5,
                     opacity: 0.8,
                     transition: { duration: 0.2 }
                   }}
@@ -1288,15 +1326,15 @@ export default function Dashboard() {
                 </motion.div>
               </div>
             ) : (
-              <motion.div 
+              <motion.div
                 className="space-y-3 sm:space-y-4"
                 variants={containerVariants}
                 initial="hidden"
                 animate="visible"
               >
                 {activityLogs.map((log) => (
-                  <motion.div 
-                    key={log._id} 
+                  <motion.div
+                    key={log._id}
                     className="flex items-center p-3 sm:p-4 rounded-xl bg-white/50 dark:bg-gray-800/30 border border-gray-100 dark:border-gray-700/50 hover:shadow-md transition-all"
                     variants={itemVariants}
                     whileHover={{ y: -2, boxShadow: "0 4px 12px -2px rgba(0, 0, 0, 0.08)" }}
@@ -1328,7 +1366,7 @@ export default function Dashboard() {
                         </div>
                       )}
                     </div>
-                    
+
                     <div className="flex-1 min-w-0">
                       <p className="text-sm sm:text-base font-medium text-gray-800 dark:text-gray-100 truncate">
                         {log.medicineId?.name || "Unknown Medicine"}
@@ -1337,17 +1375,17 @@ export default function Dashboard() {
                         {log.status.charAt(0).toUpperCase() + log.status.slice(1)} at {formatTime(log.time || "")}
                       </p>
                     </div>
-                    
+
                     <div className="text-xs sm:text-sm text-gray-400 dark:text-gray-500 flex-shrink-0 ml-2">
                       {formatTimestamp(log.timestamp)}
                     </div>
                   </motion.div>
                 ))}
-                
+
                 <div className="flex justify-center mt-4 sm:mt-6">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     asChild
                     className="rounded-full text-xs sm:text-sm text-accent dark:text-accent hover:bg-accent/5 dark:hover:bg-accent/10 border border-accent/20"
                     onClick={(e) => {
@@ -1357,15 +1395,15 @@ export default function Dashboard() {
                   >
                     <Link to="/logs" className="flex items-center px-3 sm:px-4 py-1.5 sm:py-2">
                       <span>View All Activity</span>
-                      <svg 
-                        xmlns="http://www.w3.org/2000/svg" 
-                        width="14" 
-                        height="14" 
-                        viewBox="0 0 24 24" 
-                        fill="none" 
-                        stroke="currentColor" 
-                        strokeWidth="2" 
-                        strokeLinecap="round" 
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
                         strokeLinejoin="round"
                         className="ml-1 sm:ml-2 sm:w-4 sm:h-4"
                       >
@@ -1391,4 +1429,4 @@ export default function Dashboard() {
       />
     </Container>
   )
-} 
+}

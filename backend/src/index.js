@@ -81,12 +81,12 @@ app.use(errorHandler);
 const gracefulShutdown = () => {
   console.log('Shutting down gracefully...');
   stopReminderCronJob();
-  
+
   server.close(() => {
     console.log('HTTP server closed');
     process.exit(0);
   });
-  
+
   setTimeout(() => {
     console.error('Forced shutdown after timeout');
     process.exit(1);
@@ -97,25 +97,36 @@ const gracefulShutdown = () => {
 let server;
 
 connectDB()
-  .then(() => {
+  .then(async () => {
     console.log('Connected to MongoDB');
-    
-    server = app.listen(PORT, () => {
+
+    server = app.listen(PORT, async () => {
       console.log(`Server running on port ${PORT}`);
-      startReminderCronJob() && console.log('Reminder cron job initialized');
+
+      // Initialize the reminder cron job
+      try {
+        const cronStarted = await startReminderCronJob();
+        if (cronStarted) {
+          console.log('Reminder cron job initialized successfully');
+        } else {
+          console.error('Failed to initialize reminder cron job');
+        }
+      } catch (error) {
+        console.error('Error initializing reminder cron job:', error);
+      }
     });
-    
+
     // Handle termination
     process.on('SIGTERM', gracefulShutdown);
     process.on('SIGINT', gracefulShutdown);
-    
+
     // Handle uncaught exceptions
     process.on('uncaughtException', err => {
       console.error('UNCAUGHT EXCEPTION! Shutting down...');
       console.error(err);
       process.exit(1);
     });
-    
+
     process.on('unhandledRejection', err => {
       console.error('UNHANDLED REJECTION! Shutting down...');
       console.error(err);
@@ -125,7 +136,7 @@ connectDB()
     // Keep-alive mechanism to prevent Render from putting the service to sleep
     const PING_INTERVAL = 14 * 60 * 1000; // 14 minutes in milliseconds
     const APP_URL = process.env.APP_URL || 'https://time4meds.onrender.com';
-    
+
     // Only run the keep-alive in production environment
     if (process.env.NODE_ENV === 'production') {
       setInterval(() => {
@@ -146,4 +157,4 @@ connectDB()
   })
   .catch(err => console.error('Server failed to start:', err));
 
-export default app; 
+export default app;

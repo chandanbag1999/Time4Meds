@@ -1,0 +1,21 @@
+// Re-export all UI components from a single file
+export { buttonVariants } from './button'
+export { Button } from './button-modern'
+export * from './card'
+export * from './container'
+export * from './loading-button'
+export * from './skeleton'
+export * from './table'
+export * from './toast'
+export * from './theme-toggle'
+export * from './sheet'
+
+// Newly added components
+export * from './tabs'
+export * from './dialog'
+export * from './switch'
+export * from './badge'
+export * from './progress'
+export * from './select'
+export * from './input'
+export * from './label'

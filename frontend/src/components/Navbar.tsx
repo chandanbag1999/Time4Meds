@@ -39,36 +39,63 @@ export default function Navbar({ isMobile = false, isMenuOpen = false, toggleMen
   }, [scrolled]);
 
   const navLinks = [
-    { 
-      path: "/dashboard", 
-      label: "Dashboard", 
+    {
+      path: "/dashboard",
+      label: "Dashboard",
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
         </svg>
-      ) 
+      )
     },
-    { 
-      path: "/add-medicine", 
-      label: "Add Med", 
+    {
+      path: "/add-medicine",
+      label: "Add Med",
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
         </svg>
       )
     },
-    { 
-      path: "/logs", 
-      label: "History", 
+    {
+      path: "/logs",
+      label: "History",
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
         </svg>
       )
+    },
+    {
+      path: "/analytics",
+      label: "Analytics",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
+      )
+    },
+    {
+      path: "/inventory",
+      label: "Inventory",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+        </svg>
+      )
+    },
+    {
+      path: "/caregivers",
+      label: "Caregivers",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+        </svg>
+      )
     }
   ]
 
-  const activeLink = (path: string) => 
+  const activeLink = (path: string) =>
     location.pathname === path ||
     (path !== "/dashboard" && location.pathname.startsWith(path))
 
@@ -77,8 +104,8 @@ export default function Navbar({ isMobile = false, isMenuOpen = false, toggleMen
       <nav className={cn(
         "transition-all duration-300 sticky top-0 z-50 w-full",
         scrolled && "shadow-md",
-        isMobile 
-          ? "bg-white dark:bg-gray-900" 
+        isMobile
+          ? "bg-white dark:bg-gray-900"
           : "bg-white/95 backdrop-blur-md dark:bg-gray-900/95"
       )}>
         <Container className="py-3" size="full">
@@ -95,9 +122,9 @@ export default function Navbar({ isMobile = false, isMenuOpen = false, toggleMen
                   Time4Meds
                 </span>
               </Link>
-              
+
               {isMobile && (
-                <button 
+                <button
                   onClick={toggleMenu}
                   className="p-2 ml-3 text-gray-500 dark:text-gray-400 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 md:hidden transition-colors"
                   aria-expanded={isMenuOpen}
@@ -115,15 +142,15 @@ export default function Navbar({ isMobile = false, isMenuOpen = false, toggleMen
                 </button>
               )}
             </div>
-            
+
             {/* Desktop Navigation */}
             {!isMobile && (
               <div className="hidden md:flex items-center justify-center flex-1 px-10">
                 <div className="flex bg-gray-100 dark:bg-gray-800 rounded-full p-1">
                   {navLinks.map((link) => (
-                    <Link 
-                      key={link.path} 
-                      to={link.path} 
+                    <Link
+                      key={link.path}
+                      to={link.path}
                       className={cn(
                         "px-4 py-2 text-sm font-medium rounded-full transition-all duration-200 flex items-center space-x-1.5",
                         activeLink(link.path)
@@ -138,7 +165,7 @@ export default function Navbar({ isMobile = false, isMenuOpen = false, toggleMen
                 </div>
               </div>
             )}
-            
+
             {/* User Menu (Desktop) */}
             {!isMobile && (
               <div className="flex items-center gap-3">
@@ -153,8 +180,8 @@ export default function Navbar({ isMobile = false, isMenuOpen = false, toggleMen
                   </div>
                 )}
                 <ThemeToggle className="rounded-full hover:bg-gray-100 dark:hover:bg-gray-800" />
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   onClick={handleLogout}
                   className="rounded-full border-gray-200 dark:border-gray-700 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-all"
@@ -168,7 +195,7 @@ export default function Navbar({ isMobile = false, isMenuOpen = false, toggleMen
             )}
           </div>
         </Container>
-        
+
         {/* Mobile Navigation Drawer */}
         {isMobile && isMenuOpen && (
           <div className="md:hidden fixed top-[57px] left-0 w-screen h-auto bg-white dark:bg-gray-900 shadow-lg dark:shadow-gray-900/30 z-40 animate-slideInFromTop">
@@ -234,7 +261,7 @@ export default function Navbar({ isMobile = false, isMenuOpen = false, toggleMen
           </div>
         )}
       </nav>
-      
+
       {/* Mobile Bottom Navigation */}
       {isMobile && !isMenuOpen && (
         <div className="mobile-nav md:hidden">
@@ -257,7 +284,7 @@ export default function Navbar({ isMobile = false, isMenuOpen = false, toggleMen
                 <span className="text-xs font-medium">{link.label}</span>
               </Link>
             ))}
-            
+
             <button
               onClick={() => toggleMenu && toggleMenu()}
               className="mobile-nav-item text-gray-500 dark:text-gray-400"
@@ -274,4 +301,4 @@ export default function Navbar({ isMobile = false, isMenuOpen = false, toggleMen
       )}
     </>
   )
-} 
+}
